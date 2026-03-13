@@ -11,6 +11,6 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'blog_jhondev.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')  # Se usa config porque es la carpeta contendedora 
 
 application = get_wsgi_application()
