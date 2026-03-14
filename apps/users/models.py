@@ -7,7 +7,7 @@ class ProfileUser(models.Model):
     ROLE_CHOICES = [
         ('user','User'),
         ('mod', 'Moderator'),
-        ('admin', 'Administrador')
+        ('admin', 'Administrator')
     ]
     user = models.OneToOneField(User,on_delete = models.CASCADE, related_name= 'profile', primary_key = True)
     rol = models.CharField(max_length= 20, choices= ROLE_CHOICES, default='user', help_text='Rol del usuario. Admin solo puede ser asignado por superuser')
@@ -51,6 +51,6 @@ class ProfileUser(models.Model):
         return self.profile_picture.url if self.profile_picture else '/static/images/default_avatar.png'
     def get_fullname(self):
         full_name = self.user.get_full_name()
-        return full_name if full_name else self.user.ussername
+        return full_name if full_name else self.user.username
     
 
