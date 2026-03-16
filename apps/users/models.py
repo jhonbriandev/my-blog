@@ -19,6 +19,7 @@ class ProfileUser(models.Model):
     subscribe_notifications = models.BooleanField(default = True,help_text='Recibir notificaciones por email')
     created_at = models.DateTimeField(auto_now_add = True, help_text='Fecha de creación del perfil')
     updated_at = models.DateTimeField(auto_now_add = True, help_text='Última fecha de actualización')
+    updated_at = models.DateTimeField(auto_now = True, help_text='Última fecha de actualización')
     date_last_access = models.DateTimeField(null = True, blank=True, help_text='Último acceso al sitio')
 
     class Meta:
@@ -41,9 +42,14 @@ class ProfileUser(models.Model):
         return self.is_moderator or self.is_admin()
     """def can_delete_commentaries(self,commentaries):
         return(
+
+    def can_delete_commentary(self, commentary):
+        return (
             self.is_admin() or
             commentaries.author == self.user or
             commentaries.post.author == self.user
+            commentary.author == self.user or
+            commentary.post.author == self.user
         )
     """
 
@@ -53,4 +59,4 @@ class ProfileUser(models.Model):
         full_name = self.user.get_full_name()
         return full_name if full_name else self.user.username
     
-
+    # Solo estamos aumentado este comentario
