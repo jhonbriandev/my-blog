@@ -17,7 +17,8 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Categoria'
         verbose_name_plural = 'Categorias'
-        ordering = ['order', 'name']
+        ordering = ['order', 'name'] # Estos datos qeu ingrean a la tabla tendran la prioridad
+                                     # De ser ordenados primero por orden y luego nombre
         indexes = [models.Index(fields=['slug'])]
 
     def __str__(self):
