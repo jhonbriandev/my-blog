@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Perfil - Blog Django{% endblock %}
+
+{% block content %}
+<div class = "row">
+    <!-- Sidebar con foto e info basica-->
+     <div class = "col-md-4">
+        <div class = "card-mb-3">
+            <div class="card-body text-center"></div>
+                <!-- Foto de perfil -->
+                <img
+                    src = "{{ profile.get_avatar_url}}"
+                    alt = "{{ user.username }}"
+                    class= "rounded-circle mb-3"
+                    style= "width: 150px; height : 150px; object-fit: cover;"
+                >
+                <!-- Nombre -->
+                <h3 class = "card-title">{{profile.get.fullname}}</h3>
+                <!-- Username -->
+                <p class = "text-muted">@{{user.username}}</p>
+                <!-- Rol -->
+                <p class = "mb-3">
+                    {% if profile.is_admin %}
+                        <span class="badge bg-danger">Administrador</span>
+                    {% else %}
+                        <span class="badge bg-info">Usuario</span>
+                    {% endif %}
+                </p>
+                <!-- Email -->
+                <p class="text-muted">
+                    <small>{{ user.email }}</small>
+                </p>
+                <!-- Boton Editar-->
+                <a href="{% url 'users:edit_profile' %}
+                " class="btn btn-primary btn-sm"> Editar Perfil</a>
+            </div>
+        </div>
+    </div>
+    <!-- Contenido Principal -->
+    <div class="col-md-8">
+
+    </div>  
+</div>
+{% endblock %}

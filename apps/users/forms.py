@@ -101,8 +101,8 @@ class RegisterForm(UserCreationForm):
             raise ValidationError('Username debe tener al menos 3 caracteres')
         
         # Validación 2: No debe ser una palabra común
-        palabras_prohibidas = ['admin', 'root', 'django', 'test']
-        if username.lower() in palabras_prohibidas:
+        forbidden_words = ['admin', 'root', 'django', 'test']
+        if username.lower() in forbidden_words:
             raise ValidationError(f'Username "{username}" no permitido')
         
         return username

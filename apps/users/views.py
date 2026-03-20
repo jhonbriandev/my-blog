@@ -65,7 +65,7 @@ def register_view(request):
                 request,f'¡Bienvenido {user.username}! Tu cuenta ha sido creada.'
             )
             # Redirigir a home
-            return redirect('blog:index')
+            return redirect('users:profile') # Se esta editando blog
         
         # Si las autentificaciones no son pasan, no es valido:
         else:
@@ -147,6 +147,63 @@ def login_view(request):
 
         # Re-renderizar si form no válido
         return render(request, 'users/login.html',{'form':form})
-            
 
+def logout_view(request):
+    """
+    Vista de logout.
+    
+    Muy simple: destruye sesión y redirige.
+    """
+    # Destruir sesion y borrar cookies
+    logout(request)
+    messages.success(request, 'Has cerrado sesión exitosamente')
+    return redirect('blog:index')
+
+
+@login_required(login_url='users:login')
+# Si no esta logueado lo debes dirigir a login
+def profile_view(request):
+    """Vista de perfil del usuario.
+    
+    Solo accesible para usuarios autenticados."""
+    # request.user = usuario autentificado
+    # request.user.profile = ProfileUser (One to One)
+
+    context = {
+        'profile' : request.user.profile,
+        'posts_count' : request.user.posts.count(),
+        'commentaries_count' : request.user.commentaries.count(),
+    
+    }
                 
+    return render(request,'users/profile.html',context)
+
+@login_required(login_url='users:login')
+# Si no esta logueado lo debes dirigir a login
+def edit_profile_view(request):
+    """
+    Vista para editar perfil del usuario.
+    
+    GET: Mostrar formulario con datos actuales
+    POST: Guardar cambios
+    """
+    # ============ GET: Mostrar formulario ============
+    if request.method == 'GET':
+        # Instanciar form con datos actuales (instance=...)
+        form = EditProfileForm(instance = request.user.profile)
+        return render(request,'users/edit_profile.html',{'form':form})
+    # ============ POST: Guardar cambios ============
+    if request.method == 'POST':
+        # Instanciar form con datos enviados
+        form = EditProfileForm(
+            request.POST, # Datos del formulario
+            request.FILES,  # Archivos (imagen)
+            instance = request.user.profile # Objeto a actualizar   
+        )
+        if form.is_valid():
+            form.save() # Guardar cambios en BD
+
+            messages.success(request, 'Perfil actualizado exitosamente')
+            return redirect('users:profile')
+        # Si no válido, re-renderizar con errores
+        return render(request, 'users/edit_profile.html'),{'form':form}
