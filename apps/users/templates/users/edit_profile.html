@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Perfil - Blog Django{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title mb-4">✏️ Editar Perfil</h3>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    <!-- enctype="multipart/form-data" = OBLIGATORIO para archivos -->
+                    {% csrf_token %}
+                    
+                    <!-- Biografía -->
+                    <div class="mb-3">
+                        <label for="{{ form.bio.id_for_label }}" class="form-label">
+                            Biografía
+                        </label>
+                        {{ form.bio }}
+                        {% if form.bio.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.bio.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Máximo 500 caracteres
+                        </small>
+                    </div>
+                    
+                    <!-- Foto de perfil -->
+                    <div class="mb-3">
+                        <label for="{{ form.profile_picture.id_for_label }}" class="form-label">
+                            Foto de Perfil
+                        </label>
+                        
+                        <!-- Mostrar foto actual -->
+                        {% if form.instance.profile_picture %}
+                            <div class="mb-2">
+                                <img 
+                                    src="{{ form.instance.get_avatar_url }}" 
+                                    alt="Foto actual"
+                                    style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%;"
+                                >
+                                <p class="text-muted small mt-2">Foto actual</p>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Input para subir nueva -->
+                        {{ form.profile_picture }}
+                        {% if form.foto_perfil.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ form.profile_picture.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            JPEG o PNG, máximo 5MB
+                        </small>
+                    </div>
+                    
+                    <!-- Buttons -->
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-end">
+                        <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

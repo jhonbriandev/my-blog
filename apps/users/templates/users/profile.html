@@ -3,12 +3,15 @@
 {% block title %}Perfil - Blog Django{% endblock %}
 
 {% block content %}
+
 <div class = "row">
+    {% csrf_token %}
     <!-- Sidebar con foto e info basica-->
      <div class = "col-md-4">
         <div class = "card-mb-3">
             <div class="card-body text-center"></div>
                 <!-- Foto de perfil -->
+                <!-- Usando el metodo de models-->
                 <img
                     src = "{{ profile.get_avatar_url}}"
                     alt = "{{ user.username }}"
@@ -16,7 +19,8 @@
                     style= "width: 150px; height : 150px; object-fit: cover;"
                 >
                 <!-- Nombre -->
-                <h3 class = "card-title">{{profile.get.fullname}}</h3>
+                <!-- Usando el metodo de models-->
+                <h3 class = "card-title">{{profile.get_fullname}}</h3>
                 <!-- Username -->
                 <p class = "text-muted">@{{user.username}}</p>
                 <!-- Rol -->
@@ -39,7 +43,37 @@
     </div>
     <!-- Contenido Principal -->
     <div class="col-md-8">
-
-    </div>  
+            <!-- Biografía -->
+            {% if profile.bio %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Biografía</h5>
+                        <p class="card-text">{{ profile.bio }}</p>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Estadísticas -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5>Posts</h5>
+                            <h3 class="text-primary">{{ posts_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5>Comentarios</h5>
+                            <h3 class="text-success">{{ commentaries_count }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            
+    </div>
 </div>
 {% endblock %}

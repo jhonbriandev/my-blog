@@ -62,7 +62,7 @@ def register_view(request):
             # Mensajes duran UNA sola request (se borran después)
             # Tipos: success, error, warning, info
             messages.success(
-                request,f'¡Bienvenido {user.username}! Tu cuenta ha sido creada.'
+                request,f'¡Bienvenido  {user.username}! Tu cuenta ha sido creada.'
             )
             # Redirigir a home
             return redirect('users:profile') # Se esta editando blog
@@ -137,8 +137,8 @@ def login_view(request):
                 if remember_me:
                     # Segundos en 30 días
                     request.session.set_expiry(30 * 24 * 60 * 60)
-                messages.success(request, f'!Bienvenido{user.username}!')
-                return redirect('blog:index')
+                messages.success(request, f'!Bienvenido {user.username}!')
+                return redirect('users:profile')
             
             #PASO 3: Si credenciales son incorrectas
             else:
@@ -157,7 +157,7 @@ def logout_view(request):
     # Destruir sesion y borrar cookies
     logout(request)
     messages.success(request, 'Has cerrado sesión exitosamente')
-    return redirect('blog:index')
+    return redirect('users:login')
 
 
 @login_required(login_url='users:login')
