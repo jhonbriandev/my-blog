@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ post.title }} - Blog Django{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <!-- POST -->
+        <article class="mb-4">
+            {% if post.featured_image %}
+                <img 
+                    src="{{ post.featured_image.url }}" 
+                    class="img-fluid mb-4" 
+                    alt="{{ post.title }}"
+                    style="max-height: 400px; object-fit: cover; width: 100%;"
+                >
+            {% endif %}
+            
+            <h1>{{ post.title }}</h1>
+            
+            <div class="text-muted mb-4">
+                <small>
+                    📅 {{ post.published_at|date:"d \d\e F \d\e Y" }} |
+                    ✏️ {{ post.author.get_full_name|default:post.author.username }} |
+                    👁️ {{ post.count_views }} vistas |
+                    💬 {{ post.count_commentaries }} comentarios
+                </small>
+            </div>
+            
+            {% if post.category %}
+                <div class="mb-3">
+                    <a href="?categoria={{ post.category.slug }}" class="badge bg-info">
+                        {{ post.category.icon }} {{ post.category.name }}
+                    </a>
+                </div>
+            {% endif %}
+            
+            <!-- CONTENIDO -->
+            <div class="post-content mb-4">
+                {{ post.content|linebreaks }}
+            </div>
+            
+            <!-- INFO DEL AUTOR -->
+            <div class="card bg-light mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-auto">
+                            <img 
+                                src="{{ post.author.profile.get_avatar_url }}" 
+                                alt="{{ post.author.username }}"
+                                class="rounded-circle"
+                                style="width: 80px; height: 80px; object-fit: cover;"
+                            >
+                        </div>
+                        <div class="col">
+                            <h5>{{ post.author.get_full_name }}</h5>
+                            <p class="text-muted">{{ post.author.profile.bio }}</p>
+                            {% if user == post.author %}
+                            <!-- Si el visitante ES el autor, lo manda a su propio perfil editable -->
+                            <a href="{% url 'users:profile' %}" class="btn btn-sm btn-outline-primary">
+                                Mi Perfil
+                            </a>
+                            {% else %}
+                            <!-- Si el visitante NO es el autor, muestra el perfil público del autor -->
+                            <!-- post.author.id es el número único que identifica al autor en la BD -->
+                            <a href="{% url 'users:public_profile' post.author.id %}" class="btn btn-sm btn-outline-primary">
+                                Ver Perfil
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- BOTONES DE EDICIÓN (si eres autor) -->
+            {% if user == post.author or user.profile.is_admin %}
+                <div class="mb-4">
+                    <a href="{% url 'blog:posts_update' post.slug %}" class="btn btn-warning btn-sm">
+                        ✏️ Editar
+                    </a>
+                    <a href="{% url 'blog:posts_delete' post.slug %}" class="btn btn-danger btn-sm">
+                        🗑️ Eliminar
+                    </a>
+                </div>
+            {% endif %}
+        </article>
+        
+        <hr>
+        
+        <!-- COMENTARIOS -->
+        <h3 id="comentarios" class="mb-4">
+            💬 Comentarios ({{ post.count_commentaries }})
+        </h3>
+        
+        {% if post.commentaries_permission %}
+            {% if user.is_authenticated %}
+                <!-- FORMULARIO COMENTARIO -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                      <!-- metodo add coment-->
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ form_comentary.content }}
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                Enviar Comentario
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <a href="{% url 'users:login' %}">Inicia sesión</a> para comentar
+                </div>
+            {% endif %}
+            
+            <!-- LISTA DE COMENTARIOS -->
+            {% if commentaries %}
+                <div class="comments-list">
+                    {% for comentary in commentaries %}
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex">
+                                    <img 
+                                        src="{{ commentary.author.profile.get_avatar_url }}"
+                                        alt="{{ commentary.autor.username }}"
+                                        class="rounded-circle me-3"
+                                        style="width: 40px; height: 40px; object-fit: cover;"
+                                    >
+                                    <div class="flex-grow-1">
+                                        <h6 class="card-subtitle mb-1">
+                                            {{ commentary.author.get_full_name|default:commentary.author.username }}
+                                        </h6>
+                                        <p class="text-muted small">
+                                            {{ commentary.created_at|timesince }} atrás
+                                        </p>
+                                        <p class="card-text">{{ commentary.content }}</p>
+                                        
+                                        {% if user == commentary.author or user.profile.is_admin %}
+                                            <small>
+                                                <a href="#">Editar</a> | <a href="#">Eliminar</a>
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {% if user.is_authenticated %}
+                    <div class="alert alert-info">
+                        Sé el primero en comentar
+                    </div>
+                {% endif %}
+            {% endif %}
+        
+        {% else %}
+            <div class="alert alert-warning">
+                Los comentarios están deshabilitados en este post
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- SIDEBAR DERECHO -->
+    <div class="col-lg-4">
+        {% if relationed_posts %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">📖 Relacionados</h5>
+                    <div class="list-group list-group-sm">
+                        {% for rel_posts in relationed_posts %}
+                            <a 
+                                href="{% url 'blog:posts_detail' rel_posts.slug %}" 
+                                class="list-group-item list-group-item-action"
+                            >
+                                {{ rel_posts.title|truncatewords:5 }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

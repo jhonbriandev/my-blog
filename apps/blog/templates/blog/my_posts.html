@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Mis Posts{% endblock %}
+
+{% block content %}
+
+<!-- BLOQUE: Encabezado con contadores -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Mis Posts</h2>
+    <a href="{% url 'users:profile' %}" class="btn btn-outline-secondary btn-sm">
+        ← Volver al perfil
+    </a>
+</div>
+
+<!-- BLOQUE: Mini estadísticas -->
+<!-- Muestra cuántos están publicados y cuántos son borradores -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-primary">{{ published_count }}</h5>
+                <small class="text-muted">Publicados</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-warning">{{ drafts_count }}</h5>
+                <small class="text-muted">Borradores</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BLOQUE: Lista de posts -->
+{% if posts %}
+    {% for post in posts %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+
+                    <!-- Título como enlace al detalle del post -->
+                    <h5 class="card-title">
+                        <a href="{% url 'blog:posts_detail' post.slug %}">
+                            {{ post.title }}
+                        </a>
+                    </h5>
+
+                    <!-- Badge de estado: verde si publicado, amarillo si borrador -->
+                    {% if post.status == 'published' %}
+                        <span class="badge bg-success">Publicado</span>
+                    {% elif post.status == 'drafts' %}
+                        <span class="badge bg-warning text-dark">Borrador</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Archivado</span>
+                    {% endif %}
+
+                </div>
+
+                <!-- Fecha y categoría -->
+                <small class="text-muted">
+                    {% if post.published_at %}
+                        Publicado: {{ post.published_at|date:"d/m/Y" }}
+                    {% else %}
+                        Creado: {{ post.created_at|date:"d/m/Y" }}
+                    {% endif %}
+                    {% if post.category %} · {{ post.category }}{% endif %}
+                </small>
+
+                <!-- Botones de acción -->
+                <div class="mt-2">
+                    <a href="{% url 'blog:posts_update' post.slug %}"
+                       class="btn btn-sm btn-outline-primary">Editar</a>
+                    <a href="{% url 'blog:posts_delete' post.slug %}"
+                       class="btn btn-sm btn-outline-danger">Eliminar</a>
+                </div>
+
+            </div>
+        </div>
+    {% endfor %}
+
+    <!-- BLOQUE: Paginación -->
+    <!-- page_obj viene automático de ListView -->
+    {% if page_obj.has_other_pages %}
+        <nav>
+            <ul class="pagination">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                    </li>
+                {% endif %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                    </span>
+                </li>
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+{% else %}
+    <!-- Si no tiene posts -->
+    <div class="alert alert-info">
+        Aún no has escrito ningún post.
+        <a href="{% url 'blog:posts_create' %}">¡Crea tu primero!</a>
+    </div>
+{% endif %}
+
+{% endblock %}

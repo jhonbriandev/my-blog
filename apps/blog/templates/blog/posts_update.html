@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Post - Blog Django{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title mb-4">✍️ Editar Post</h3>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Titulo -->
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">Título</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="text-danger small">{{ form.title.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Contenido -->
+                    <div class="mb-3">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">Contenido</label>
+                        {{ form.content }}
+                        {% if form.content.errors %}
+                            <div class="text-danger small">{{ form.content.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Resumen -->
+                    <div class="mb-3">
+                        <label for="{{ form.summary.id_for_label }}" class="form-label">Resumen (opcional)</label>
+                        {{ form.summary }}
+                        {% if form.summary.errors %}
+                            <div class="text-danger small">{{ form.summary.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Imagen -->
+                    <div class="mb-3">
+                        <label for="{{ form.featured_image.id_for_label }}" class="form-label">Imagen Destacada</label>
+                        {{ form.featured_image }}
+                        {% if form.featured_image.errors %}
+                            <div class="text-danger small">{{ form.featured_image.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Categoría -->
+                    <div class="mb-3">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">Categoría</label>
+                        {{ form.category }}
+                    </div>
+                    
+                    <!-- Estado -->
+                    <div class="mb-3">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">Estado</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <div class="text-danger small">{{ form.status.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            {% if user.profile.is_admin %}
+                                Como admin, tu post se publicará automáticamente
+                            {% else %}
+                                Tu post será guardado como borrador hasta que un admin lo publique
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <!-- Buttons -->
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-end">
+                        <a href="{% url 'blog:posts_list' %}" class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            ✓ Editar Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

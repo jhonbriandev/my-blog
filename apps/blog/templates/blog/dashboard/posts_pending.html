@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}Posts Pendientes - Blog Django{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">📋 Posts Pendientes de Aprobación</h1>
+    
+    <!-- ESTADÍSTICAS DASHBOARD -->
+    <!-- total_posts es un diccionario enviado desde get_context_data() -->
+    <div class="row mb-4">
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">⧗ Pendientes</h5>
+                    <!-- ❌ total_posts → ✅ total_posts.pending -->
+                    <h2 class="card-text">{{ total_posts.pending }}</h2>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">✅ Aprobados hoy</h5>
+                    <!-- ❌ totales.aprobados_hoy → ✅ total_posts.today_approved -->
+                    <h2 class="card-text">{{ total_posts.today_approved }}</h2>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ❌ Tarjeta "Rechazados" eliminada -->
+        <!-- No existe status='rejected' en el modelo. -->
+        <!-- Los rechazados vuelven a 'drafts', no tienen estado propio. -->
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">📝 Total Publicados</h5>
+                    <!-- ✅ total_posts.total_published viene de get_context_data() -->
+                    <h2 class="card-text">{{ total_posts.total_published }}</h2>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">📊 En esta página</h5>
+                    <!-- paginator.count = total de posts en el queryset -->
+                    <h2 class="card-text">{{ paginator.count }}</h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- TABLA DE POSTS PENDIENTES -->
+    <!-- ❌ posts_pendientes → ✅ posts (context_object_name en la vista) -->
+    {% if posts %}
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Título</th>
+                            <th>Autor</th>
+                            <th>Creado</th>
+                            <th>Categoría</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- ❌ posts_pendientes → ✅ posts -->
+                        {% for post in posts %}
+                            <tr>
+                                <!-- Título y resumen -->
+                                <td>
+                                    <!-- ❌ post.titulo → ✅ post.title -->
+                                    <strong>{{ post.title }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        <!-- ❌ post.resumen → ✅ post.summary -->
+                                        {{ post.summary|truncatewords:15 }}
+                                    </small>
+                                </td>
+                                
+                                <!-- Autor -->
+                                <td>
+                                    <!-- Enlace al perfil público del autor -->
+                                    <!-- ❌ usuarios:perfil → ✅ users:profile -->
+                                    <!-- ❌ post.autor → ✅ post.author -->
+                                    <a href="{% url 'users:profile' %}">
+                                        {{ post.author.get_full_name|default:post.author.username }}
+                                    </a>
+                                    <br>
+                                    <small class="text-muted">@{{ post.author.username }}</small>
+                                </td>
+                                
+                                <!-- Fecha creación -->
+                                <td>
+                                    <!-- ❌ post.fecha_creacion → ✅ post.created_at -->
+                                    <small>{{ post.created_at|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                
+                                <!-- Categoría -->
+                                <td>
+                                    <!-- ❌ post.categoria → ✅ post.category -->
+                                    {% if post.category %}
+                                        <span class="badge bg-info">
+                                            <!-- ❌ post.categoria.nombre → ✅ post.category -->
+                                            <!-- Category.__str__ ya devuelve el nombre -->
+                                            {{ post.category }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Acciones -->
+                                <td>
+                                    <!-- ❌ blog:detail → ✅ blog:posts_detail -->
+                                    <a href="{% url 'blog:posts_detail' post.slug %}" 
+                                       class="btn btn-sm btn-info" title="Ver post">
+                                        👁️ Ver
+                                    </a>
+                                    <!-- ❌ blog:aprobar_post → ✅ blog:posts_pending -->
+                                    <!-- Necesitas confirmar el name correcto en tu urls.py -->
+                                    <a href="{% url 'blog:approve_post' post.id %}" 
+                                       class="btn btn-sm btn-warning" title="Revisar y aprobar/rechazar">
+                                        ⧗ Revisar
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- PAGINACIÓN -->
+        <!-- is_paginated = True automático cuando hay más posts que paginate_by -->
+        {% if is_paginated %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                Anterior
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                Siguiente
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                                Última
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    
+    <!-- SI NO HAY PENDIENTES -->
+    {% else %}
+        <div class="alert alert-success" role="alert">
+            <h4 class="alert-heading">✅ Excelente</h4>
+            <p>No hay posts pendientes de aprobación. ¡Todos fueron procesados!</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

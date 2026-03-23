@@ -18,7 +18,7 @@ class ProfileUser(models.Model):
     has_email_confirmated = models.BooleanField(default=False,help_text='Email ha sido confirmado por el usuario')
     subscribe_notifications = models.BooleanField(default = True,help_text='Recibir notificaciones por email')
     created_at = models.DateTimeField(auto_now_add = True, help_text='Fecha de creación del perfil')
-    updated_at = models.DateTimeField(auto_now_add = True, help_text='Última fecha de actualización')
+    updated_at = models.DateTimeField(auto_now = True, help_text='Última fecha de actualización')
     date_last_access = models.DateTimeField(null = True, blank=True, help_text='Último acceso al sitio')
 
     class Meta:

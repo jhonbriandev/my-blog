@@ -15,5 +15,9 @@ urlpatterns = [
 
     # PROFILE
     path('profile/',views.profile_view, name = 'profile'),
-    path('profile/edit/',views.edit_profile_view, name = 'edit_profile')
+    path('profile/edit/',views.edit_profile_view, name = 'edit_profile'),
+    # Nueva URL para ver el perfil de OTRO usuario
+    # <int:user_id> es un número entero que identifica al usuario
+    # Ejemplo: /users/profile/5/ → muestra el perfil del usuario con id=5
+    path('profile/<int:user_id>/', views.public_profile_view, name='public_profile'),
 ]

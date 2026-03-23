@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Posts - Blog Django{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- SIDEBAR -->
+    <div class="col-md-3 mb-4">
+        <!-- Búsqueda -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <form method="GET" action="{% url 'blog:index' %}">
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            name="q" 
+                            class="form-control"
+                            placeholder="Buscar..."
+                            value="{{ query }}"
+                        >
+                        <button class="btn btn-primary" type="submit">
+                            🔍
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Categorías -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <h6 class="card-title">Categorías</h6>
+                <div class="list-group">
+                    <a 
+                        href="{% url 'blog:posts_list' %}" 
+                        class="list-group-item list-group-item-action {% if not select_categories %}active{% endif %}"
+                    >
+                        📚 Todas
+                    </a>
+                    {% for cat in categories %}
+                        <a 
+                            href="{% url 'blog:posts_list' %}?category={{ cat.slug }}" 
+                            class="list-group-item list-group-item-action {% if select_categories == cat.slug %}active{% endif %}"
+                        >
+                            {{ cat.icon }} {{ cat.name }} ({{ cat.get_posts_published }})
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- POPULARES -->
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">📈 Más Vistos</h6>
+                <div class="list-group list-group-sm">
+                    {% for post in popular_posts %}
+                        <a href="{% url 'blog:posts_detail' post.slug %}" class="list-group-item list-group-item-action"></a>
+                            <small>{{ post.title|truncatewords:5 }}</small>
+                            <br>
+                            <small class="text-muted">👁️ {{ post.count_views }}</small>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="col-md-9">
+        {% if query %}
+            <h4 class="mb-3">Resultados para: "{{ query }}"</h4>
+        {% else %}
+            <h4 class="mb-3">Posts</h4>
+        {% endif %}
+        
+        <!-- Lista de posts -->
+        {% if posts %}
+            <div class="row">
+                {% for post in posts %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            {% if post.featured_image %}
+                                <img 
+                                    src="{{ post.featured_image.url }}" 
+                                    class="card-img-top" 
+                                    alt="{{ post.title }}"
+                                    style="height: 200px; object-fit: cover;"
+                                >
+                            {% endif %}
+                            
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <a href="{% url 'blog:posts_detail' post.slug %}">
+                                        {{ post.title }}
+                                    </a>
+                                </h5>
+                                
+                                <p class="card-text text-muted">
+                                    {{ post.summary|truncatewords:20 }}
+                                </p>
+                                
+                                <div class="small text-muted mb-2">
+                                    📅 {{ post.published_at|date:"d/m/Y" }} |
+                                    ✏️ {{ post.author.username }} |
+                                    💬 {{ post.count_commentaries }}
+                                </div>
+                                
+                                {% if post.category %}
+                                    <span class="badge bg-info">{{ post.category.name }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- PAGINACIÓN -->
+            {% if is_paginated %}
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">Primera</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        
+        {% else %}
+            <div class="alert alert-info">
+                No hay posts que mostrar.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

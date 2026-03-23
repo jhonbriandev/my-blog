@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
         <!-- Logo -->
-        <a class="navbar-brand" href="{% url 'users:profile' %}">
+        <a class="navbar-brand" href="{% url 'blog:posts_list' %}">
             📚 Blog Django
         </a>
         
@@ -13,28 +13,53 @@
         <!-- Menu items -->
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <!-- Home -->
+
+                <!-- Inicio -->
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'users:profile' %}">Inicio</a>
+                    <a class="nav-link" href="{% url 'blog:index' %}">Inicio</a>
                 </li>
                 
                 <!-- Posts -->
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'users:profile' %}">Posts</a>
+                    <a class="nav-link" href="{% url 'blog:posts_list' %}">Posts</a>
                 </li>
                 
                 <!-- Si está logueado -->
                 {% if user.is_authenticated %}
+
                     <!-- Crear post -->
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'users:profile' %}">
+                        <a class="nav-link" href="{% url 'blog:posts_create' %}">
                             ✍️ Crear Post
                         </a>
                     </li>
+
+                    <!-- ✅ NUEVO: Pestaña Dashboard solo visible para admin -->
+                    <!-- user.profile.is_admin verifica el rol del usuario -->
+                    <!-- Si no es admin, esta pestaña directamente no aparece -->
+                    {% if user.profile.is_admin %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" 
+                               id="dashboardMenu" role="button" 
+                               data-bs-toggle="dropdown">
+                                🛠️ Dashboard
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="dashboardMenu">
+                                <!-- Posts pendientes de aprobación -->
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'blog:posts_pending' %}">
+                                        ⧗ Posts Pendientes
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    {% endif %}
                     
                     <!-- Dropdown usuario -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" 
+                           id="userMenu" role="button" 
+                           data-bs-toggle="dropdown">
                             {{ user.username }}
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="userMenu">
@@ -48,11 +73,12 @@
                                     ⚙️ Editar Perfil
                                 </a>
                             </li>
-                            {% if user.perfil.is_admin %}
+                            <!-- ❌ user.perfil.is_admin → ✅ user.profile.is_admin -->
+                            {% if user.profile.is_admin %}
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item" href="/admin/">
-                                        🔐 Panel Admin
+                                        🔐 Panel Admin Django
                                     </a>
                                 </li>
                             {% endif %}
@@ -78,6 +104,7 @@
                         </a>
                     </li>
                 {% endif %}
+
             </ul>
         </div>
     </div>

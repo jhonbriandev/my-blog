@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Revisar Post - Blog Django{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- COLUMNA IZQUIERDA: POST COMPLETO -->
+        <div class="col-lg-8">
+            <article class="card mb-4">
+                <div class="card-body">
+
+                    
+                    <h1 class="card-title">{{ post.title }}</h1>
+                    
+                    <!-- Info del autor -->
+                    <div class="text-muted mb-3">
+                        <small>
+                            
+                            <strong>Autor:</strong> {{ post.author.get_full_name|default:post.author.username }}<br>
+                            <strong>Usuario:</strong> @{{ post.author.username }}<br>
+                
+                            <strong>Creado:</strong> {{ post.created_at|date:"d \d\e F \d\e Y H:i" }}<br>
+                           
+                            {% if post.category %}
+                                
+                                <strong>Categoría:</strong> {{ post.category }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    
+                    {% if post.featured_image %}
+                        <img src="{{ post.featured_image.url }}" 
+                             class="img-fluid mb-4" 
+                            
+                             alt="{{ post.title }}">
+                    {% endif %}
+                    
+                   
+                    <div class="post-content mb-4">
+                        {{ post.content|linebreaks }}
+                    </div>
+                    
+                    
+                    {% if post.summary %}
+                        <div class="alert alert-light">
+                            <strong>Resumen:</strong> {{ post.summary }}
+                        </div>
+                    {% endif %}
+
+                </div>
+            </article>
+        </div>
+        
+        <!-- COLUMNA DERECHA: PANEL DE APROBACIÓN -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">⧗ Revisar & Decidir</h5>
+                </div>
+                
+                <div class="card-body">
+                    <form method="POST" class="mb-4">
+                        {% csrf_token %}
+                        
+                        <!-- Campo: decisión (aprobar/rechazar) -->
+                        <div class="mb-3">
+                            <label class="form-label">¿Qué deseas hacer?</label>
+                            {{ form.decision }}
+                            {% if form.decision.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.decision.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                       
+                        <div class="mb-3">
+                            <label for="{{ form.rejected_reason.id_for_label }}" class="form-label">
+                                Feedback (si rechazas)
+                            </label>
+                            {{ form.rejected_reason }}
+                            {% if form.rejected_reason.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.rejected_reason.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Este feedback será enviado al autor del post
+                            </small>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                ✓ Enviar Decisión
+                            </button>
+                         
+                            <a href="{% url 'blog:posts_pending' %}" class="btn btn-outline-secondary">
+                                ← Volver al listado
+                            </a>
+                        </div>
+                    </form>
+                    
+                    <!-- CHECKLIST DE REVISIÓN -->
+                    <hr>
+                    <h6 class="mb-3">📋 Checklist de Revisión</h6>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="check1">
+                        <label class="form-check-label" for="check1">¿Contenido es apropiado?</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="check2">
+                        <label class="form-check-label" for="check2">¿Título es claro?</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="check3">
+                        <label class="form-check-label" for="check3">¿Categoría es correcta?</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="check4">
+                        <label class="form-check-label" for="check4">¿Tiene imagen destacada?</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="check5">
+                        <label class="form-check-label" for="check5">¿Redacción es correcta?</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

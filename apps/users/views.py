@@ -207,3 +207,44 @@ def edit_profile_view(request):
             return redirect('users:profile')
         # Si no válido, re-renderizar con errores
         return render(request, 'users/edit_profile.html'),{'form':form}
+
+def public_profile_view(request, user_id):
+    """
+    Vista pública del perfil de cualquier usuario.
+    No requiere login — cualquier visitante puede verla.
+    
+    Recibe:
+    - user_id: viene de la URL /users/profile/5/
+    """
+    from django.contrib.auth.models import User
+    from django.shortcuts import get_object_or_404, render
+    from apps.blog.models import Post
+
+    # Buscar el usuario por ID
+    # Si no existe → página 404 automáticamente
+    profile_user = get_object_or_404(User, id=user_id)
+
+    # Sus 5 posts publicados más recientes
+    user_posts = Post.objects.published().filter(
+        author=profile_user
+    ).order_by('-published_at')[:5]
+
+    # Total de posts publicados (para el contador)
+    posts_count = Post.objects.published().filter(
+        author=profile_user
+    ).count()
+
+    # Total de comentarios aprobados (para el contador)
+    commentaries_count = profile_user.commentaries.filter(
+        aprobated=True
+    ).count()
+
+    context = {
+        'profile_user': profile_user,   # El dueño del perfil
+        'user_posts': user_posts,        # Sus últimos posts
+        'posts_count': posts_count,      # Contador de posts
+        'commentaries_count': commentaries_count,  # Contador de comentarios
+    }
+
+    return render(request, 'users/public_profile.html', context)
+
