@@ -14,7 +14,6 @@
             <div class="card text-center bg-warning text-dark">
                 <div class="card-body">
                     <h5 class="card-title">⧗ Pendientes</h5>
-                    <!-- ❌ total_posts → ✅ total_posts.pending -->
                     <h2 class="card-text">{{ total_posts.pending }}</h2>
                 </div>
             </div>
@@ -24,15 +23,12 @@
             <div class="card text-center bg-success text-white">
                 <div class="card-body">
                     <h5 class="card-title">✅ Aprobados hoy</h5>
-                    <!-- ❌ totales.aprobados_hoy → ✅ total_posts.today_approved -->
                     <h2 class="card-text">{{ total_posts.today_approved }}</h2>
                 </div>
             </div>
         </div>
         
-        <!-- ❌ Tarjeta "Rechazados" eliminada -->
-        <!-- No existe status='rejected' en el modelo. -->
-        <!-- Los rechazados vuelven a 'drafts', no tienen estado propio. -->
+        <!-- Los rechazados son 'drafts', no tienen estado propio. -->
 
         <div class="col-md-3 mb-3">
             <div class="card text-center bg-success text-white">
@@ -57,7 +53,6 @@
     </div>
     
     <!-- TABLA DE POSTS PENDIENTES -->
-    <!-- ❌ posts_pendientes → ✅ posts (context_object_name en la vista) -->
     {% if posts %}
         <div class="card">
             <div class="table-responsive">
@@ -72,16 +67,13 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- ❌ posts_pendientes → ✅ posts -->
                         {% for post in posts %}
                             <tr>
                                 <!-- Título y resumen -->
                                 <td>
-                                    <!-- ❌ post.titulo → ✅ post.title -->
                                     <strong>{{ post.title }}</strong>
                                     <br>
                                     <small class="text-muted">
-                                        <!-- ❌ post.resumen → ✅ post.summary -->
                                         {{ post.summary|truncatewords:15 }}
                                     </small>
                                 </td>
@@ -89,9 +81,7 @@
                                 <!-- Autor -->
                                 <td>
                                     <!-- Enlace al perfil público del autor -->
-                                    <!-- ❌ usuarios:perfil → ✅ users:profile -->
-                                    <!-- ❌ post.autor → ✅ post.author -->
-                                    <a href="{% url 'users:profile' %}">
+                                    <a href="{% url 'users:public_profile' post.author.id %}">
                                         {{ post.author.get_full_name|default:post.author.username }}
                                     </a>
                                     <br>
@@ -100,16 +90,13 @@
                                 
                                 <!-- Fecha creación -->
                                 <td>
-                                    <!-- ❌ post.fecha_creacion → ✅ post.created_at -->
                                     <small>{{ post.created_at|date:"d/m/Y H:i" }}</small>
                                 </td>
                                 
                                 <!-- Categoría -->
                                 <td>
-                                    <!-- ❌ post.categoria → ✅ post.category -->
                                     {% if post.category %}
                                         <span class="badge bg-info">
-                                            <!-- ❌ post.categoria.nombre → ✅ post.category -->
                                             <!-- Category.__str__ ya devuelve el nombre -->
                                             {{ post.category }}
                                         </span>
@@ -118,12 +105,10 @@
                                 
                                 <!-- Acciones -->
                                 <td>
-                                    <!-- ❌ blog:detail → ✅ blog:posts_detail -->
                                     <a href="{% url 'blog:posts_detail' post.slug %}" 
                                        class="btn btn-sm btn-info" title="Ver post">
                                         👁️ Ver
                                     </a>
-                                    <!-- ❌ blog:aprobar_post → ✅ blog:posts_pending -->
                                     <!-- Necesitas confirmar el name correcto en tu urls.py -->
                                     <a href="{% url 'blog:approve_post' post.id %}" 
                                        class="btn btn-sm btn-warning" title="Revisar y aprobar/rechazar">

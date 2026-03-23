@@ -145,10 +145,27 @@ class Post(models.Model):
     def save(self, *args, **kwargs):
         # Genera el slug automáticamente si no existe
         if not self.slug:
-            self.slug = slugify(self.title)
-        # Asigna la fecha de publicación solo la primera vez que se publica
+            # Paso 1: convertir título a slug base
+            base_slug = slugify(self.title)
+            slug = base_slug
+
+            # Paso 2: verificar si ese slug ya existe en BD
+            # Usamos un contador para agregar un número al final si hay duplicado
+            # Es como cuando guardas "documento.pdf" y ya existe,
+            # el sistema lo llama "documento-1.pdf", "documento-2.pdf", etc.
+            counter = 1
+            while Post.objects.filter(slug=slug).exists():
+                # Si ya existe, agregar número al final
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            
+            # Paso 3: asignar el slug único encontrado
+            self.slug = slug
+
+        # Asignar fecha de publicación la primera vez que se publica
         if self.status == 'published' and not self.published_at:
             self.published_at = timezone.now()
+
         super().save(*args, **kwargs)
 
     # METHODS
