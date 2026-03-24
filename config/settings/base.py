@@ -46,12 +46,13 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     
     # Local apps
-    'apps.users',
+    'apps.users.apps.UsersConfig.',
     'apps.blog',
     'apps.api',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware', # Para static files
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -164,7 +165,7 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # Login
-LOGIN_URL = 'usuarios:login'
+LOGIN_URL = 'users:login'
 LOGIN_REDIRECT_URL = 'blog:index'
 LOGOUT_REDIRECT_URL = 'blog:index'
 

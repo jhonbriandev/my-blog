@@ -8,18 +8,14 @@
         <!-- COLUMNA IZQUIERDA: POST COMPLETO -->
         <div class="col-lg-8">
             <article class="card mb-4">
-                <div class="card-body">
-
-                    
+                <div class="card-body">   
                     <h1 class="card-title">{{ post.title }}</h1>
                     
                     <!-- Info del autor -->
                     <div class="text-muted mb-3">
                         <small>
-                            
                             <strong>Autor:</strong> {{ post.author.get_full_name|default:post.author.username }}<br>
                             <strong>Usuario:</strong> @{{ post.author.username }}<br>
-                
                             <strong>Creado:</strong> {{ post.created_at|date:"d \d\e F \d\e Y H:i" }}<br>
                            
                             {% if post.category %}
@@ -29,26 +25,24 @@
                         </small>
                     </div>
                     
-                    
+                    <div>
                     {% if post.featured_image %}
                         <img src="{{ post.featured_image.url }}" 
                              class="img-fluid mb-4" 
                             
                              alt="{{ post.title }}">
                     {% endif %}
-                    
-                   
+                    </div>
                     <div class="post-content mb-4">
                         {{ post.content|linebreaks }}
                     </div>
-                    
-                    
+                    <div>
                     {% if post.summary %}
                         <div class="alert alert-light">
                             <strong>Resumen:</strong> {{ post.summary }}
                         </div>
                     {% endif %}
-
+                    </div>
                 </div>
             </article>
         </div>

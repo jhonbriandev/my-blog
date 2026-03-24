@@ -1,16 +1,18 @@
 from django.http import Http404
 from django.shortcuts import render, redirect,get_object_or_404
 from django.views.generic import ListView,DeleteView,CreateView,UpdateView,DetailView
+from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.db.models import Q
 from django.utils import timezone
-from .models import Post,Commentary,Category,User
+from .models import Post,Commentary,Category
 from .forms import PostForm, ApprovePostForm
 
-class IndexView(ListView):
+class IndexView(View):
     """
     Vista de INICIO (homepage).
     
@@ -28,7 +30,7 @@ class IndexView(ListView):
         """Renderizar homepage"""
         
         # Posts destacados (más vistos)
-        featured_posts = Post.objects.published().order_popular()[:5] # Metodos de Postqueryset
+        featured_posts = Post.objects.published().order_popular()[:3] # Metodos de Postqueryset
         
         # Últimos posts publicados
         recently_posts = Post.objects.published().recently_order()[:6] # Metodos de Postqueryset
@@ -50,6 +52,7 @@ class IndexView(ListView):
         
         return render(request, 'blog/index.html', context)
 
+# ListView es un ayudante que automáticamente toma una lista de objetos y la manda al template
 class PostListView(ListView):
     """
     Vista de lista de posts.
@@ -154,6 +157,23 @@ class PostDetailView(DetailView):
     template_name = 'blog/posts_detail.html'
     context_object_name = 'post'
     slug_field = 'slug'  # Campo para lookup (URL)
+
+    def get_queryset(self):
+        """
+        OPTIMIZACIÓN CLAVE:
+        Trae author + profile + category en una sola query
+        """
+        return Post.objects.select_related(
+            # Select_Related es un optimizador para llaves foraneas u One to one
+            # Sirve para evirar escribir muchos queries y problema N + 1
+            # Hara un JOIN en SQL y traera todo junto
+            # Gracia a esto traemos el autor del post Y su perfil en la misma query
+            # Y ademas cada post tiene una categoria entonces el la misma query trae esta informacion
+            'author__profile',
+                # usamos __ para navegar entre relaciones (author → profile)
+                # y le indicamos a select_related qué relaciones debe incluir en el JOIN            
+            'category'
+        )
     
     def get_object(self, queryset=None):
         """
@@ -181,19 +201,23 @@ class PostDetailView(DetailView):
         
         # INCREMENTAR VISTAS
         post.increase_views()
-        # └─ atomic() = operación safe (evita race conditions)
+        # atomic() = operación safe (evita race conditions)
         
         # COMENTARIOS APROBADOS
         context['commentaries'] = post.get_aprobated_commentaries()
         
         # FORMULARIO DE COMENTARIO (si está logueado)
-        #if self.request.user.is_authenticated:
+        # if self.request.user.is_authenticated:
         #    context['commentary_form'] = ComentaryForm()
         
         # POSTS RELACIONADOS (misma categoría)
-        context['relationed_posts'] = Post.objects.published().filter(
+        context['relationed_posts'] = Post.objects.published().select_related(
+            'author__profile'
+        ).filter(
             category=post.category
-        ).exclude(id=post.id)[:3]
+        ).exclude(
+            id=post.id
+        )[:3]
 
         return context
 
@@ -515,7 +539,7 @@ class PostsPendientesView(LoginRequiredMixin, ListView):
         
         return context
     
-class ApprovePostView(LoginRequiredMixin, ListView):
+class ApprovePostView(LoginRequiredMixin, View):
     """
     Vista para ADMIN REVISAR un post y APROBAR o RECHAZAR.
     

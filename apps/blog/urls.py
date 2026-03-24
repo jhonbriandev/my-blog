@@ -19,7 +19,7 @@ urlpatterns = [
 
         # APROBACION DE POSTS
     path('dashboard/',PostsPendientesView.as_view(), name='posts_pending'),
-    path('dashboard/<int:post_id>/approve',ApprovePostView.as_view(), name='approve_post'),
+    path('dashboard/<int:post_id>/approve/',ApprovePostView.as_view(), name='approve_post'),
     
     path('<slug:slug>/', PostDetailView.as_view(), name='posts_detail'),
     path('<slug:slug>/update/', PostUpdateView.as_view(), name='posts_update'),

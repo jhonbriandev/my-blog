@@ -38,12 +38,9 @@ class ProfileUser(models.Model):
     def is_regular_user(self):
         return self.rol == 'user'
     def can_moderate(self):
-        return self.is_moderator or self.is_admin()
+        return self.is_moderator or self.rol == 'mod' or self.is_admin()
     """def can_delete_commentaries(self,commentaries):
         return(
-
-    def can_delete_commentary(self, commentary):
-        return (
             self.is_admin() or
             commentaries.author == self.user or
             commentaries.post.author == self.user

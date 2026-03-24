@@ -60,9 +60,10 @@ class PostQuerySet(models.QuerySet):
     def with_prefetch(self):
         # Optimiza consultas trayendo relaciones en una sola query (evita N+1)
         return self.select_related(
-            'author',
-            'author_profile',
+            'author__profile',
             'category'
+        # Aca usamos prefecth porque traemos uno o muchos comentarios
+        # En otras relaciones como post a autor usaremos select por que traemos datos de uno a uno o muchos a uno
         ).prefetch_related('commentaries')
 
 

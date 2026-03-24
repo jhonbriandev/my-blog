@@ -1,10 +1,13 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from .forms import RegisterForm, LoginForm, EditProfileForm
+from apps.blog.models import Post
+from django.contrib.auth.models import User
+
 
 @require_http_methods(["GET", "POST"])
 # └─ Este decorador solo permite GET y POST en esta vista
@@ -206,7 +209,7 @@ def edit_profile_view(request):
             messages.success(request, 'Perfil actualizado exitosamente')
             return redirect('users:profile')
         # Si no válido, re-renderizar con errores
-        return render(request, 'users/edit_profile.html'),{'form':form}
+        return render(request, 'users/edit_profile.html',{'form':form})
 
 def public_profile_view(request, user_id):
     """
@@ -216,9 +219,7 @@ def public_profile_view(request, user_id):
     Recibe:
     - user_id: viene de la URL /users/profile/5/
     """
-    from django.contrib.auth.models import User
-    from django.shortcuts import get_object_or_404, render
-    from apps.blog.models import Post
+
 
     # Buscar el usuario por ID
     # Si no existe → página 404 automáticamente

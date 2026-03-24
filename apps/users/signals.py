@@ -8,7 +8,3 @@ def create_profile_user(sender, instance, created, **kwargs):
     """Crear perfil automáticamente cuando se crea un usuario"""
     if created:
         ProfileUser.objects.create(user=instance)
-@receiver(post_save, sender = User)
-def save_profile_user(sender,instance, **kwargs):
-    """Guardar perfil cuando se actualiza usuario"""
-    instance.profile.save()

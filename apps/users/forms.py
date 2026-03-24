@@ -195,17 +195,17 @@ class EditProfileForm(forms.ModelForm):
             })
         }
         
-        def clean_profile_picture(self):
-            """Validar que la imagen sea válida"""
-            picture = self.cleaned_data.get('profile_picture') # Con .get traemos el valor del diccionario
+    def clean_profile_picture(self):
+        """Validar que la imagen sea válida"""
+        picture = self.cleaned_data.get('profile_picture') # Con .get traemos el valor del diccionario
             
-            if picture: # Igual a TRUE
-                # Validar tamaño (máximo 5MB)
-                if picture.size > 5 * 1024 * 1024:
-                    raise ValidationError('La imagen no debe superar los 5MB')
+        if picture: # Igual a TRUE
+            # Validar tamaño (máximo 5MB)
+            if picture.size > 5 * 1024 * 1024:
+                raise ValidationError('La imagen no debe superar los 5MB')
                 
-                # Validar formato (solo JPEG y PNG)
-                valid_formats = ['image/jpeg', 'image/png']
-                if picture.content_type not in valid_formats:
-                    raise ValidationError('Solo se aceptan imágenes JPEG y PNG')
-            return picture
+            # Validar formato (solo JPEG y PNG)
+            valid_formats = ['image/jpeg', 'image/png']
+            if picture.content_type not in valid_formats:
+                raise ValidationError('Solo se aceptan imágenes JPEG y PNG')
+        return picture

@@ -43,9 +43,6 @@ class PostForm(forms.ModelForm):
            'category' : forms.Select(attrs={
                'class' : 'form-select'
            }),
-           'status' : forms.Select(attrs={
-               'class' : 'form-select'
-           }),
 
         }
     def clean_title(self):
