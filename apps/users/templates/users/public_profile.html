@@ -18,7 +18,7 @@
                 <!-- Foto de perfil del AUTOR visitado -->
                 <!-- get_avatar_url() retorna foto o avatar por defecto -->
                 <img
-                    src="{{ profile_user.profile.get_avatar_url }}"
+                    src="{{ profile_le.get_avatar_url }}"
                     alt="{{ profile_user.username }}"
                     class="rounded-circle mb-3"
                     style="width: 150px; height: 150px; object-fit: cover;"
@@ -26,7 +26,7 @@
 
                 <!-- Nombre completo del autor -->
                 <!-- get_fullname() retorna nombre completo o username si está vacío -->
-                <h3 class="card-title">{{ profile_user.profile.get_fullname }}</h3>
+                <h3 class="card-title">{{ profile_le.get_fullname }}</h3>
 
                 <!-- Username del autor -->
                 <p class="text-muted">@{{ profile_user.username }}</p>

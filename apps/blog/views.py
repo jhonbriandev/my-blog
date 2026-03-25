@@ -9,9 +9,69 @@ from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.db.models import Q
 from django.utils import timezone
+from django.core.mail import send_mail
+from django.conf import settings
 from .models import Post,Commentary,Category
-from .forms import PostForm, ApprovePostForm
+from .forms import PostForm, ApprovePostForm, CommentaryForm
 
+# ─────────────────────────────────────────────
+# HELPER: envío de emails
+# ─────────────────────────────────────────────
+ 
+def _send_post_approved_email(post):
+    """
+    Envía email al autor cuando su post es APROBADO.
+ 
+    Analogía: como cuando un editor llama al escritor para decirle
+    "tu artículo saldrá mañana en el periódico".
+ 
+    ¿Por qué una función aparte y no dentro de la vista?
+    - Reutilizable: si en el futuro lo llamamos desde otro lado, no repetimos código.
+    - Más limpia: la vista solo decide QUÉ hacer, esta función sabe CÓMO enviarlo.
+    - Fácil de testear por separado.
+    """
+    subject = f'✅ Tu post "{post.title}" fue aprobado'
+    message = (
+        f'Hola {post.author.get_full_name() or post.author.username},\n\n'
+        f'¡Buenas noticias! Tu post "{post.title}" ha sido aprobado y ya está publicado.\n\n'
+        f'Puedes verlo en tu blog. ¡Gracias por tu contribución!\n\n'
+        f'— El equipo del blog'
+    )
+    # send_mail(asunto, mensaje, remitente, [destinatarios], fail_silently=...)
+    # fail_silently=True → si el email falla, NO lanza error en la app (el post igual se aprueba)
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [post.author.email],
+        fail_silently=True,
+    )
+ 
+ 
+def _send_post_rejected_email(post, reason):
+    """
+    Envía email al autor cuando su post es RECHAZADO, incluyendo el motivo.
+ 
+    Analogía: como cuando el editor te devuelve el artículo con notas
+    explicando qué debes mejorar antes de publicarlo.
+    """
+    subject = f'ℹ️ Tu post "{post.title}" necesita cambios'
+    message = (
+        f'Hola {post.author.get_full_name() or post.author.username},\n\n'
+        f'Tu post "{post.title}" fue revisado y necesita algunos cambios antes de publicarse.\n\n'
+        f'Motivo:\n{reason}\n\n'
+        f'Puedes editarlo y enviarlo de nuevo cuando esté listo.\n\n'
+        f'— El equipo del blog'
+    )
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [post.author.email],
+        fail_silently=True,
+    )
+
+# Vista principal del blog
 class IndexView(View):
     """
     Vista de INICIO (homepage).
@@ -51,6 +111,8 @@ class IndexView(View):
         }
         
         return render(request, 'blog/index.html', context)
+
+# VISTAS PARA LOS POST
 
 # ListView es un ayudante que automáticamente toma una lista de objetos y la manda al template
 class PostListView(ListView):
@@ -188,7 +250,8 @@ class PostDetailView(DetailView):
         if obj.status == 'drafts':
             if not self.request.user.is_authenticated:
                 raise Http404('Post no encontrado')
-            if self.request.user != obj.author and not self.request.user.profile.is_admin():
+            # is admin sin parentesis gracias al @property
+            if self.request.user != obj.author and not self.request.user.profile.is_admin:
                 raise Http404('Post no encontrado')
         
         return obj
@@ -203,12 +266,36 @@ class PostDetailView(DetailView):
         post.increase_views()
         # atomic() = operación safe (evita race conditions)
         
+        # En los templates Django NO podemos llamar métodos con argumentos
+        # (ej: profile.can_edit_commentary(commentary) falla con error).
+        # Solución: calculamos los permisos aquí en Python (donde SÍ podemos
+        # pasar argumentos) y los enviamos listos al template como True/False.
+
         # COMENTARIOS APROBADOS
-        context['commentaries'] = post.get_aprobated_commentaries()
+        commentaries_raw = post.get_aprobated_commentaries()
+        commentaries_with_permissions = []
+ 
+        for commentary in commentaries_raw:
+            can_edit = False
+            can_delete = False
+ 
+            # Solo calculamos permisos si hay un usuario autenticado
+            if self.request.user.is_authenticated:
+                profile = self.request.user.profile
+                can_edit = profile.can_edit_commentary(commentary)
+                can_delete = profile.can_delete_commentary(commentary)
+ 
+            commentaries_with_permissions.append({
+                'commentary': commentary,
+                'can_edit': can_edit,
+                'can_delete': can_delete,
+            })
+ 
+        context['commentaries_with_permissions'] = commentaries_with_permissions
         
         # FORMULARIO DE COMENTARIO (si está logueado)
-        # if self.request.user.is_authenticated:
-        #    context['commentary_form'] = ComentaryForm()
+        if self.request.user.is_authenticated:
+            context['form_commentary'] = CommentaryForm()
         
         # POSTS RELACIONADOS (misma categoría)
         context['relationed_posts'] = Post.objects.published().select_related(
@@ -277,7 +364,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         # └─ request.user = usuario autenticado
         
         # LÓGICA DE ESTADO Y PUBLICACIÓN
-        if self.request.user.profile.is_admin():
+        if self.request.user.profile.is_admin:
             # Admin: publicar automáticamente
             post.status = 'published'
             post.published_at = timezone.now()
@@ -343,7 +430,8 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         
         # Si NO es admin, filtrar solo sus posts
         # Usaremos el metodo que creamos en model User
-        if not self.request.user.profile.can_moderate():
+        # Sin parentesis gracias al property
+        if not self.request.user.profile.can_moderate:
             queryset = queryset.filter(author=self.request.user)
 
         # Si ES moderador/admin: ver todos (sin filtro adicional)
@@ -351,12 +439,6 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
     
     def form_valid(self, form):
         """Actualizar post cuando form es válido"""
-        
-        #post = form.save(commit=False)
-        
-        # LÓGICA: Si cambió de borrador a publicado, establecer fecha
-        #if form.cleaned_data['status'] == 'published' and not post.published_at:
-        #    post.published_at = timezone.now()
         
         # GUARDAR
         post = form.save()
@@ -389,16 +471,15 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
         queryset = Post.objects.all()
 
         # Si NO es moderador/admin, filtrar solo sus posts
-        if not self.request.user.profile.can_moderate():
+        if not self.request.user.profile.can_moderate:
             queryset = queryset.filter(author=self.request.user)
 
         # Si ES moderador/admin: ver todos (sin filtro adicional
         return queryset
     
-    def delete(self, request, *args, **kwargs):
-        """Override para mostrar mensaje antes de eliminar"""
-        messages.success(request, '✓ Post eliminado')
-        return super().delete(request, *args, **kwargs)
+    def form_valid(self, form):
+        messages.success(self.request, '✓ Post eliminado')
+        return super().form_valid(form)
 
 
 # VISTAS PRIVADAS PARA CADA USUARIO
@@ -467,7 +548,7 @@ class MyCommentariesView(LoginRequiredMixin, ListView):
 
 # VISTA PARA ADMIN
 
-class PostsPendientesView(LoginRequiredMixin, ListView):
+class PostsPendingView(LoginRequiredMixin, ListView):
     """
     Vista de DASHBOARD para ADMIN ver posts pendientes.
     
@@ -499,7 +580,7 @@ class PostsPendientesView(LoginRequiredMixin, ListView):
         """
         
         # Validar que es ADMIN (no moderador, no usuario regular)
-        if not self.request.user.profile.is_admin():
+        if not self.request.user.profile.is_admin:
             raise PermissionDenied('Solo ADMIN puede ver posts pendientes')
         
         # Posts en BORRADOR ordenados por más antiguos primero
@@ -512,7 +593,6 @@ class PostsPendientesView(LoginRequiredMixin, ListView):
         """
         Agregar estadísticas al contexto del dashboard.
         El campo  que usaremos es 'published_at'.
-        'rejected': usaba status='rejected' que no existe en STATUS_CHOICES.
         Al rechazar un post, vuelve a 'drafts' (ver ApprovePostView).
         """
         
@@ -559,7 +639,7 @@ class ApprovePostView(LoginRequiredMixin, View):
        ├─ fecha_publicacion = ahora
        └─ Post es VISIBLE para todos
     5. Si rechaza:
-       ├─ estado = 'rejected'
+       ├─ estado = 'drafts'
        ├─ motivo_rechazo = feedback
        ├─ aprobado_por = admin
        ├─ fecha_aprobacion = ahora
@@ -575,7 +655,7 @@ class ApprovePostView(LoginRequiredMixin, View):
         post = get_object_or_404(Post, id=post_id)
 
         # Validar que es ADMIN
-        if not request.user.profile.is_admin():
+        if not request.user.profile.is_admin:
             raise PermissionDenied('Solo ADMIN puede aprobar posts')
         # Validar que está en BORRADOR (no procesado)
         if post.status != 'drafts':
@@ -598,7 +678,7 @@ class ApprovePostView(LoginRequiredMixin, View):
         post = get_object_or_404(Post, id=post_id)
         
         # Validar permisos
-        if not request.user.profile.is_admin():
+        if not request.user.profile.is_admin:
             raise PermissionDenied('Solo ADMIN puede aprobar')
         
         # Procesar formulario
@@ -644,3 +724,252 @@ class ApprovePostView(LoginRequiredMixin, View):
         # Si form no es válido, re-renderizar con errores
         context = {'post': post, 'form': form}
         return render(request, self.template_name, context)
+    
+# VISTAS PARA LOS COMENTARIOS
+
+
+class CommentaryPermissionMixin:
+    """
+    Mixin reutilizable para verificar permisos sobre comentarios.
+    Usaremos un mismo acceso y sistema de seguridad para todos los views
+    de comentarios. Si no existe el permiso obtienes
+    un error 403 (Forbidden) en vez de un redirect raro.
+    """
+
+    def get_commentary_or_403(self, pk, action='edit'):
+        """
+        Obtenemos el comentario y verificamos permisos.
+        - action='edit'   → solo el autor puede
+        - action='delete' → autor, admin o moderador pueden
+        """
+        # Traemos el comentario. Si no existe → 404 automático
+        commentary = get_object_or_404(Commentary, pk=pk)
+
+        user_profile = self.request.user.profile
+
+        if action == 'edit':
+            # Usamos los metodos del user models
+            has_permission = user_profile.can_edit_commentary(commentary)
+        else:  # delete
+            has_permission = user_profile.can_delete_commentary(commentary)
+
+        # Si no tiene permiso → error 403 (Forbidden)
+        # Analogía: intentar entrar a una habitación con llave equivocada
+        if not has_permission:
+            raise PermissionDenied
+
+        return commentary
+
+class AddCommentaryView(LoginRequiredMixin,View):
+    """
+    Vista para agregar comentario.
+    
+    POST /blog/<slug>/comentar/ → Crear comentario
+    
+    Características:
+    - Solo usuarios autenticados
+    - Validar que el post permita comentarios
+    - Si es admin, auto-aprobar
+    - Si es usuario, requiere aprobación
+    """
+    login_url = 'users:login'
+
+    def post(self,request,slug):
+        """procesar nuevo comentario"""
+
+        # Obtener el post
+        post = get_object_or_404(Post, slug=slug)
+
+        if not post.commentaries_permission:
+            messages.error(request, 'Los comentarios están deshabilitados')
+            return redirect('blog:posts_detail', slug=post.slug)
+        # Procesar formulario
+        form = CommentaryForm(request.POST)
+
+        if form.is_valid():
+            # Crear comentario
+            commentary = form.save(commit = False)
+            commentary.post = post
+            commentary.author = request.user
+
+            # Auto aprobar si es admin
+            # is admin sin parentesis gracias al @property
+            commentary.aprobated = request.user.profile.is_admin
+
+            # Guardar
+            commentary.save()
+
+            # Mensaje
+            if commentary.aprobated:
+                messages.success(request, '✓ Comentario publicado')
+            else:
+                messages.success(
+                    request,'Tu comentario sera revisado pronto'
+                )
+        else:
+            # Errores
+            for field,errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error)
+
+        # Redirigir al post
+        return redirect('blog:posts_detail', slug=post.slug)
+
+# VISTAS PARA APROBACION DE COMENTARIOS
+
+class ApproveCommentaryView(LoginRequiredMixin,View):
+    """
+    Vista para aprobar comentario.
+    POST /blog/comentario/<id>/aprobar/
+    Solo admin/moderador.
+    Solo recibe POST (no tiene página propia, actúa desde el dashboard)
+    """
+
+    login_url ='users:login'
+
+    def post(self,request,commentary_id):
+        """Aprobar comentario"""
+        
+        # Obtener comentario
+        commentary = get_object_or_404(Commentary, id=commentary_id)
+
+        # Validar permiso
+        # Esto extrae informacion en varias partes
+        # el request.user es el built in django
+        # El .profile es el related_name
+        # .can_moderate() metodo del Profile
+        if not request.user.profile.can_moderate:
+            raise PermissionDenied('No tienes permisos')
+        
+        # Aprobar
+        commentary.aprobated = True
+        commentary.save()
+
+        messages.success(request, '✓ Comentario aprobado')
+        return redirect('blog:posts_detail', slug = commentary.post.slug)
+
+class CommentariesPendingView(LoginRequiredMixin, View):
+    """
+    Dashboard para ver y aprobar todos los comentarios pendientes.
+    Solo accesible para admin o moderadores.
+    """
+    login_url = 'users:login'
+
+    def get(self, request):
+
+        if not request.user.profile.can_moderate:
+            raise PermissionDenied
+
+        # Traemos comentarios pendientes, del más antiguo al más nuevo
+        # (el más antiguo lleva más tiempo esperando — fair queue)
+        pending = Commentary.objects.filter(
+            aprobated=False
+        ).select_related(
+            'author',       # evita N+1 queries al mostrar el nombre del autor
+            'post',         # evita N+1 queries al mostrar el título del post
+            'author__profile'
+        ).order_by('created_at')
+
+        return render(request, 'blog/dashboard/commentaries_pending.html', {
+            'pending_commentaries': pending,
+            'total_pending': pending.count(),
+        })
+    
+class EditCommentaryView(LoginRequiredMixin,CommentaryPermissionMixin,View):
+    
+    """
+    Vista para editar un comentario.
+
+    Hereda de 3 clases (analogía: un chef con 3 certificaciones):
+    - LoginRequiredMixin  → certifica que el usuario está logueado
+    - CommentaryPermissionMixin → certifica que tiene permiso
+    - View               → es una vista de Django
+    """
+    login_url = 'users:login'
+
+    def get(self, request, slug, pk):
+        """Muestra el formulario con el comentario ya rellenado"""
+
+        # get_commentary_or_403 viene del Mixin que creamos arriba
+        # Si no tiene permiso, lanza 403 automáticamente
+        commentary = self.get_commentary_or_403(pk, action='edit')
+
+        # Prellenamos el form con los datos actuales del comentario
+        # Analogía: abrir un documento Word ya escrito para modificarlo
+        form = CommentaryForm(instance=commentary)
+
+        return render(request, 'blog/commentaries/edit_commentary.html', {
+            'form': form,
+            'commentary': commentary,
+            'post': commentary.post,
+        })
+
+    def post(self, request, slug, pk):
+        """Procesa el formulario con los cambios"""
+
+        commentary = self.get_commentary_or_403(pk, action='edit')
+
+        # instance=commentary le dice a Django: "actualiza ESTE objeto,
+        # no crees uno nuevo" — sin instance crearía un comentario duplicado
+        form = CommentaryForm(request.POST, instance=commentary)
+
+        if form.is_valid():
+            edited = form.save(commit=False)
+
+            # Marcamos que fue editado (tienes este campo en el modelo)
+            edited.was_edited = True
+
+            # Si el usuario no es admin, el comentario vuelve a moderación
+            # Analogía: si reescribes una carta, debe ser revisada de nuevo
+            # is admin sin parentesis gracias al @property
+            if not request.user.profile.is_admin:
+                edited.aprobated = False
+
+            edited.save()
+            messages.success(request, '✓ Comentario actualizado')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error)
+
+        return redirect('blog:posts_detail', slug=slug)
+
+class DeleteCommentaryView(LoginRequiredMixin,CommentaryPermissionMixin,View):
+    """
+    Vista para eliminar comentario.
+    
+    POST /blog/comentario/<id>/eliminar/
+    
+    Puede eliminar:
+    - El autor del comentario
+    - El autor del post
+    - Admin
+    - Mod
+    """
+
+    login_url = 'users:login'
+
+    def get(self, request, slug, pk):
+        """Muestra pantalla de confirmación antes de eliminar"""
+
+        # action='delete' permite que admin/mod también puedan
+        commentary = self.get_commentary_or_403(pk, action='delete')
+
+        return render(request, 'blog/commentaries/delete_commentary.html', {
+            'commentary': commentary,
+            'post': commentary.post,
+        })
+    
+    def post(self, request, slug, pk):
+        """Ejecuta la eliminación después de confirmar"""
+
+        commentary = self.get_commentary_or_403(pk, action='delete')
+
+        # Guardamos el post para redirigir después de borrar
+        # (después de borrar el comentario ya no podemos acceder a commentary.post)
+        post_slug = commentary.post.slug
+
+        commentary.delete()
+        messages.success(request, '✓ Comentario eliminado')
+
+        return redirect('blog:posts_detail', slug=post_slug)

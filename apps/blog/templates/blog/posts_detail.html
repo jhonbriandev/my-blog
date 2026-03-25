@@ -72,8 +72,8 @@
                 </div>
             </div>
             
-            <!-- BOTONES DE EDICIÓN (si eres autor) -->
-            {% if user == post.author or user.profile.is_admin %}
+            <!-- BOTONES DE EDICIÓN (si eres autor, admin o mod) -->
+            {% if user == post.author or user.profile.can_moderate %}
                 <div class="mb-4">
                     <a href="{% url 'blog:posts_update' post.slug %}" class="btn btn-warning btn-sm">
                         ✏️ Editar
@@ -87,79 +87,23 @@
         
         <hr>
         
-        <!-- COMENTARIOS -->
-        <h3 id="comentarios" class="mb-4">
-            💬 Comentarios ({{ post.count_commentaries }})
-        </h3>
-        
-        {% if post.commentaries_permission %}
-            {% if user.is_authenticated %}
-                <!-- FORMULARIO COMENTARIO -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                      <!-- metodo add coment-->
-                            {% csrf_token %}
-                            <div class="mb-3">
-                                {{ form_comentary.content }}
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                Enviar Comentario
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            {% else %}
-                <div class="alert alert-info">
-                    <a href="{% url 'users:login' %}">Inicia sesión</a> para comentar
-                </div>
-            {% endif %}
-            
-            <!-- LISTA DE COMENTARIOS -->
-            {% if commentaries %}
-                <div class="comments-list">
-                    {% for comentary in commentaries %}
-                        <div class="card mb-3">
-                            <div class="card-body">
-                                <div class="d-flex">
-                                    <img 
-                                        src="{{ commentary.author.profile.get_avatar_url }}"
-                                        alt="{{ commentary.autor.username }}"
-                                        class="rounded-circle me-3"
-                                        style="width: 40px; height: 40px; object-fit: cover;"
-                                    >
-                                    <div class="flex-grow-1">
-                                        <h6 class="card-subtitle mb-1">
-                                            {{ commentary.author.get_full_name|default:commentary.author.username }}
-                                        </h6>
-                                        <p class="text-muted small">
-                                            {{ commentary.created_at|timesince }} atrás
-                                        </p>
-                                        <p class="card-text">{{ commentary.content }}</p>
-                                        
-                                        {% if user == commentary.author or user.profile.is_admin %}
-                                            <small>
-                                                <a href="#">Editar</a> | <a href="#">Eliminar</a>
-                                            </small>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
+            <!-- COMENTARIOS -->
+            <h3 id="comentarios" class="mb-4">
+                💬 Comentarios ({{ post.count_commentaries }})
+            </h3>
+            {# El formulario solo aparece si los comentarios están habilitados #}
+            {% if post.commentaries_permission %}
                 {% if user.is_authenticated %}
+                    {% include 'blog/commentaries/commentary_form.html' %}
+                {% else %}
                     <div class="alert alert-info">
-                        Sé el primero en comentar
+                        <a href="{% url 'users:login' %}">Inicia sesión</a> para comentar
                     </div>
                 {% endif %}
             {% endif %}
-        
-        {% else %}
-            <div class="alert alert-warning">
-                Los comentarios están deshabilitados en este post
-            </div>
-        {% endif %}
+
+            {# La lista siempre se incluye — ella misma decide qué mostrar #}
+            {% include 'blog/commentaries/commentary_list.html' with commentaries=commentaries_with_permissions %}   
     </div>
     
     <!-- SIDEBAR DERECHO -->

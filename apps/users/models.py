@@ -9,6 +9,9 @@ class ProfileUser(models.Model):
         ('mod', 'Moderator'),
         ('admin', 'Administrator')
     ]
+            # Para usos del related name
+            # Estás en Profile y quieres datos del User → usa perfil.use
+            # Estás en User y quieres datos del Profile → usa usuario.profile
     user = models.OneToOneField(User,on_delete = models.CASCADE, related_name= 'profile', primary_key = True)
     rol = models.CharField(max_length= 20, choices= ROLE_CHOICES, default='user', help_text='Rol del usuario. Admin solo puede ser asignado por superuser')
     bio = models.TextField(max_length=500, blank=True, null = True,  help_text='Biografía del usuario (máximo 500 caracteres)')
@@ -31,31 +34,43 @@ class ProfileUser(models.Model):
         ]
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - {self.rol}"
+    
     def __repr__(self):
         return super().__repr__()
+    
+    @property
     def is_admin(self):
         return  self.rol == 'admin' or self.user.is_superuser
+    
+    @property
     def is_regular_user(self):
         return self.rol == 'user'
+    
+    @property
     def can_moderate(self):
-        return self.is_moderator or self.rol == 'mod' or self.is_admin()
-    """def can_delete_commentaries(self,commentaries):
+        """¿Puede moderar contenido? (admin o moderador)"""
+        return self.is_moderator or self.rol == 'mod' or self.is_admin
+    
+    def can_delete_commentary(self,commentary):
+        """ Puede eliminar el comentario el autor del comentario, autor del post, el mod y el admin"""
         return(
-            self.is_admin() or
-            commentaries.author == self.user or
-            commentaries.post.author == self.user
+            
+            self.is_admin or
+            self.can_moderate or  
             commentary.author == self.user or
             commentary.post.author == self.user
         )
-    """
+    def can_edit_commentary(self,commentary):
+        """ Solo el autor del comentario puede editar su comentario, nadie mas"""
+        return commentary.author == self.user
 
     def get_avatar_url(self):
         # Verificamos si existe el campo Y si el archivo existe físicamente
         if self.profile_picture:
             return self.profile_picture.url
         return '/static/images/default_avatar.png'
+    
     def get_fullname(self):
         full_name = self.user.get_full_name()
         return full_name if full_name else self.user.username
     
-    # Solo estamos aumentado este comentario

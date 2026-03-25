@@ -97,6 +97,9 @@ class Post(models.Model):
 
     # RELATIONS
     # ForeignKey trae el ID del User como llave foránea
+    # DIRECCIÓN INVERSA (related_name): Desde User hacia Posts
+    # "¿Qué posts escribió este usuario?"
+    # user.posts.all()  Vas de User → todos sus Posts
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
     # null=True permite posts sin categoría asignada
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='posts', blank=True, null=True)
@@ -250,11 +253,13 @@ class Commentary(models.Model):
         if len(self.content) > 1000:
             raise ValidationError('El comentario no puede exceder 1000 caracteres')
         # Verifica que el post permita comentarios
-        if not self.post.commentaries_permission:
-            raise ValidationError('Este post no permite comentarios')
-        # Los posts archivados no aceptan comentarios
-        if self.post.status == 'archived':
-            raise ValidationError('No se pueden comentar en posts archivados')
+        # Mas eficiente que "if self.post" (no hace query a BD)
+        if self.post_id:
+            if not self.post.commentaries_permission:
+                raise ValidationError('Este post no permite comentarios')
+            # Los posts archivados no aceptan comentarios
+            if self.post.status == 'archived':
+                raise ValidationError('No se pueden comentar en posts archivados')
 
     # METHODS
     def can_be_edited_by(self, user):

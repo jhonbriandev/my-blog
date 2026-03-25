@@ -127,3 +127,44 @@ class ApprovePostForm(forms.Form):
         if decision == 'rejected' and not reason:
             raise ValidationError('Debes dar un motivo si rechazas un post')
         return cleaned_data
+
+
+class CommentaryForm(forms.ModelForm):
+    """
+    Formulario para que usuarios dejen comentarios en posts.
+    
+    Solo necesita el contenido: el autor y el post
+    se asignan en la vista (igual que author en PostForm).
+    
+    Si es una respuesta a otro comentario, response_to
+    también se asigna en la vista, no aqui
+    """
+    class Meta:
+        model = Commentary
+        fields = ['content']
+        widgets = {
+            'content' : forms.Textarea(attrs={
+                'class' : 'form-control',
+                'rows' : 3,
+                'placeholder' : 'Tu comentario aqui...',
+                'maxlength' : 1000
+            })
+            
+        }
+    
+    def clean_content(self):
+        """Validar Contenido"""
+        # Atrapamos el field, esto debe llamarse tal cual lo tenemos en la BD
+        content = self.cleaned_data.get('content')
+
+        # strip() elimina espacios al inicio y final
+        # Evita comentarios con solo espacios vacíos
+
+        if len(content.strip()) < 5:
+            raise forms.ValidationError(
+                'El comentario debe tener al menos 5 caracteres')
+        elif len(content) > 1000:
+            raise forms.ValidationError(
+                'El comentario no puede exceder los 1000 caracteres')
+        return content
+    

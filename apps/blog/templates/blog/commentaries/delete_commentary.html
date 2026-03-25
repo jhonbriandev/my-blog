@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <h2>¿Eliminar este comentario?</h2>
+
+  <!-- Mostramos el comentario para que el usuario confirme qué va a borrar -->
+  <blockquote>{{ commentary.content }}</blockquote>
+  <p>Autor: {{ commentary.get_name_author }}</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit">Sí, eliminar</button>
+    <a href="{% url 'blog:posts_detail' commentary.post.slug %}">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

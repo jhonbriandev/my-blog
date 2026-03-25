@@ -6,7 +6,6 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from .forms import RegisterForm, LoginForm, EditProfileForm
 from apps.blog.models import Post
-from django.contrib.auth.models import User
 
 
 @require_http_methods(["GET", "POST"])

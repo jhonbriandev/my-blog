@@ -412,7 +412,7 @@ class TestCommentary:
         """Verifica que __str__ trunca contenido mayor a 50 caracteres"""
         commentary = CommentaryFactory(content='a' * 60)
         # __str__ agrega '...' si el contenido supera 50 chars
-        assert '...' in str(commentary)
+        assert '...' in str()
 
     def test_str_shows_full_content_if_short(self):
         """Verifica que __str__ muestra todo el contenido si es menor a 50 chars"""

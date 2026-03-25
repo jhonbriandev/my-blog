@@ -125,7 +125,7 @@
                 {% for category in categories %}
                     <div class="col-md-3 mb-3">
                         <a 
-                            href="{% url 'blog:posts_list' %}?categoriy={{ category.slug }}"
+                            href="{% url 'blog:posts_list' %}?category={{ category.slug }}"
                             class="btn btn-outline-primary w-100"
                         >
                             {{ category.icon }} {{ category.name }}

@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     
     # Local apps
-    'apps.users.apps.UsersConfig.',
+    'apps.users.apps.UsersConfig',
     'apps.blog',
     'apps.api',
 ]
@@ -180,3 +180,13 @@ if not DEBUG:
         "script-src": ("'self'", "'unsafe-inline'"),
         "style-src": ("'self'", "'unsafe-inline'"),
     }
+
+# SEND EMAIL
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'   
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'tu_correo@gmail.com'
+EMAIL_HOST_PASSWORD = 'tu_contraseña_de_app'
+DEFAULT_FROM_EMAIL = 'tu_correo@gmail.com'

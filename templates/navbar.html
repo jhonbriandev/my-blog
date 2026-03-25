@@ -1,7 +1,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
         <!-- Logo -->
-        <a class="navbar-brand" href="{% url 'blog:posts_list' %}">
+        <a class="navbar-brand" href="{% url 'blog:index' %}">
             📚 Blog Django
         </a>
         
@@ -34,10 +34,8 @@
                         </a>
                     </li>
 
-                    <!-- ✅ NUEVO: Pestaña Dashboard solo visible para admin -->
-                    <!-- user.profile.is_admin verifica el rol del usuario -->
-                    <!-- Si no es admin, esta pestaña directamente no aparece -->
-                    {% if user.profile.is_admin %}
+                    <!-- Pestaña Dashboard solo visible para admin o moderador -->
+
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" 
                                id="dashboardMenu" role="button" 
@@ -46,14 +44,24 @@
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="dashboardMenu">
                                 <!-- Posts pendientes de aprobación -->
+                                <!-- Si no es admin, esta pestaña directamente no aparece -->
+                                {% if user.profile.is_admin %}
                                 <li>
                                     <a class="dropdown-item" href="{% url 'blog:posts_pending' %}">
                                         ⧗ Posts Pendientes
                                     </a>
                                 </li>
+                                {% endif %}
+                                <!-- user.profile.can_moderate para admin o mod -->
+                                {% if user.profile.can_moderate %}
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'blog:commentaries_pending' %}">
+                                        ⧗ Comentarios Pendientes
+                                    </a>
+                                </li>
+                                {% endif %}
                             </ul>
                         </li>
-                    {% endif %}
                     
                     <!-- Dropdown usuario -->
                     <li class="nav-item dropdown">

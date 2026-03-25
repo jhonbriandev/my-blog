@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}Revisar Comentario - Blog Django{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+
+        {# ─── COLUMNA IZQUIERDA: COMENTARIO COMPLETO ─────────────────────── #}
+        <div class="col-lg-8">
+
+            {# Breadcrumb #}
+            <nav class="text-muted small mb-3">
+                <a href="{% url 'blog:moderation_dashboard' %}" class="text-decoration-none">
+                    Dashboard de moderación
+                </a>
+                <span class="mx-1">›</span>
+                <span>Revisar comentario</span>
+            </nav>
+
+            <article class="card mb-4">
+                <div class="card-body">
+
+                    {# Cabecera: avatar + autor + post de origen #}
+                    <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                        <img
+                            src="{{ commentary.author.profile.get_avatar_url }}"
+                            alt="{{ commentary.author.username }}"
+                            class="rounded-circle"
+                            style="width: 48px; height: 48px; object-fit: cover; flex-shrink: 0;"
+                        >
+                        <div>
+                            <p class="mb-0 fw-medium">
+                                {{ commentary.author.get_full_name|default:commentary.author.username }}
+                            </p>
+                            <p class="mb-0 small text-muted">
+                                @{{ commentary.author.username }} &middot;
+                                {{ commentary.created_at|date:"d \d\e F \d\e Y H:i" }}
+                            </p>
+                            <p class="mb-0 small text-muted">
+                                En:
+                                <a href="{% url 'blog:posts_detail' commentary.post.slug %}" class="text-decoration-none">
+                                    {{ commentary.post.title }}
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+
+                    {# Contenido del comentario #}
+                    <div class="mb-4">
+                        <p class="card-text fs-6" style="line-height: 1.8;">
+                            {{ commentary.content }}
+                        </p>
+                    </div>
+
+                    {# Badge de estado actual #}
+                    <div class="text-muted small border-top pt-3">
+                        Estado actual:
+                        {% if commentary.aprobated %}
+                            <span class="badge bg-success ms-1">Aprobado</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark ms-1">Pendiente de revisión</span>
+                        {% endif %}
+
+                        {% if commentary.was_edited %}
+                            <span class="badge bg-info ms-1">Editado</span>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </article>
+        </div>
+
+        {# ─── COLUMNA DERECHA: PANEL DE DECISIÓN ─────────────────────────── #}
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px;">
+
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">⧗ Revisar &amp; Decidir</h5>
+                </div>
+
+                <div class="card-body">
+
+                    {# Formulario de decisión #}
+                    <form method="POST" class="mb-4" id="approve-form">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">¿Qué deseas hacer?</label>
+                            {{ form.decision }}
+                            {% if form.decision.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.decision.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.rejected_reason.id_for_label }}" class="form-label">
+                                Feedback (si rechazas)
+                            </label>
+                            {{ form.rejected_reason }}
+                            {% if form.rejected_reason.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.rejected_reason.errors }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Este feedback será enviado al autor del comentario
+                            </small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {# El botón empieza deshabilitado — el checklist lo habilita #}
+                            <button
+                                type="submit"
+                                class="btn btn-primary btn-lg"
+                                id="submit-btn"
+                                disabled
+                            >
+                                ✓ Enviar Decisión
+                            </button>
+                            <a href="{% url 'blog:moderation_dashboard' %}" class="btn btn-outline-secondary">
+                                ← Volver al listado
+                            </a>
+                        </div>
+                    </form>
+
+                    {# ── Checklist de revisión ── #}
+                    <hr>
+                    <h6 class="mb-3">📋 Checklist de Revisión</h6>
+                    <p class="text-muted small mb-3">
+                        Marca todos los ítems para habilitar el botón.
+                    </p>
+
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input checklist-item" id="check1">
+                        <label class="form-check-label" for="check1">
+                            ¿El contenido es apropiado?
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input checklist-item" id="check2">
+                        <label class="form-check-label" for="check2">
+                            ¿No contiene spam o publicidad?
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input checklist-item" id="check3">
+                        <label class="form-check-label" for="check3">
+                            ¿No tiene lenguaje ofensivo?
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input checklist-item" id="check4">
+                        <label class="form-check-label" for="check4">
+                            ¿Es relevante al post?
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input checklist-item" id="check5">
+                        <label class="form-check-label" for="check5">
+                            ¿La redacción es comprensible?
+                        </label>
+                    </div>
+
+                    {# Contador de progreso del checklist #}
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Progreso</span>
+                            <span id="check-counter">0 / 5</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div
+                                class="progress-bar bg-warning"
+                                id="check-progress"
+                                role="progressbar"
+                                style="width: 0%"
+                            ></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{# ─── JS: habilita el botón solo cuando todos los checks estén marcados ─── #}
+<script>
+    const checkboxes = document.querySelectorAll('.checklist-item');
+    const submitBtn  = document.getElementById('submit-btn');
+    const counter    = document.getElementById('check-counter');
+    const progressBar = document.getElementById('check-progress');
+    const total = checkboxes.length;
+
+    function updateChecklist() {
+        // Contamos cuántos están marcados
+        const checked = [...checkboxes].filter(cb => cb.checked).length;
+
+        // Actualizamos el contador y la barra
+        counter.textContent = `${checked} / ${total}`;
+        progressBar.style.width = `${(checked / total) * 100}%`;
+
+        // Cambiamos el color de la barra según el progreso
+        // Analogía: semáforo — rojo → amarillo → verde
+        progressBar.className = 'progress-bar';
+        if (checked === total) {
+            progressBar.classList.add('bg-success');
+        } else if (checked >= Math.ceil(total / 2)) {
+            progressBar.classList.add('bg-warning');
+        } else {
+            progressBar.classList.add('bg-danger');
+        }
+
+        // Habilitamos o deshabilitamos el botón
+        submitBtn.disabled = checked < total;
+    }
+
+    // Escuchamos cada checkbox
+    checkboxes.forEach(cb => cb.addEventListener('change', updateChecklist));
+</script>
+
+{% endblock %}

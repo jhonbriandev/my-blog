@@ -199,7 +199,7 @@ class EditProfileForm(forms.ModelForm):
         """Validar que la imagen sea válida"""
         picture = self.cleaned_data.get('profile_picture') # Con .get traemos el valor del diccionario
             
-        if picture: # Igual a TRUE
+        if picture and hasattr(picture, 'content_type'):
             # Validar tamaño (máximo 5MB)
             if picture.size > 5 * 1024 * 1024:
                 raise ValidationError('La imagen no debe superar los 5MB')

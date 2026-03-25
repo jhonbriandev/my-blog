@@ -1,0 +1,41 @@
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex">
+            <img 
+                src="{{ item.commentary.author.profile.get_avatar_url }}"
+                alt="{{ item.commentary.author.username }}"
+                class="rounded-circle me-3"
+                style="width: 40px; height: 40px; object-fit: cover;"
+            >
+            <div>
+                <div class="flex-grow-1">
+                    <h6 class="card-subtitle mb-1">
+                    {{ item.commentary.author.get_full_name|default:item.commentary.author.username }}
+                    </h6>
+                    <p class="text-muted small">
+                    {{ item.commentary.created_at|timesince }} atrás
+                    </p>
+                    <p class="card-text">{{ item.commentary.content }}</p>
+                                        
+                    {# Usamos item.can_edit e item.can_delete — ya calculados en la vista #}
+                    {# Ya no necesitamos verificar user == author aquí, la vista lo hizo #}
+                    {% if item.can_edit or item.can_delete %}
+                    <small>
+                        {% if item.can_edit %}
+                            <a href="{% url 'blog:edit_commentary' item.commentary.post.slug item.commentary.pk %}">
+                                Editar
+                            </a>
+                        {% endif %}
+
+                        {% if item.can_delete %}
+                            <a href="{% url 'blog:delete_commentary' item.commentary.post.slug item.commentary.pk %}">
+                                Eliminar
+                            </a>
+                        {% endif %}
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

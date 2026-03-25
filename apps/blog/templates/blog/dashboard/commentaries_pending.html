@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Comentarios Pendientes - Blog Django{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <h1 class="mb-4">💬 Comentarios Pendientes de Moderación</h1>
+
+    {# ─── ESTADÍSTICAS ────────────────────────────────────────────────────── #}
+    <div class="row mb-4">
+
+        <div class="col-md-4 mb-3">
+            <div class="card text-center bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">⧗ Pendientes</h5>
+                    <h2 class="card-text">{{ total_pending }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">📊 En esta página</h5>
+                    <h2 class="card-text">{{ pending_commentaries|length }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">✅ Estado</h5>
+                    <h2 class="card-text">
+                        {% if total_pending == 0 %}Al día{% else %}Revisar{% endif %}
+                    </h2>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {# ─── TABLA DE COMENTARIOS PENDIENTES ─────────────────────────────────── #}
+    {% if pending_commentaries %}
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Autor</th>
+                            <th>Comentario</th>
+                            <th>Post</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for commentary in pending_commentaries %}
+                        <tr>
+
+                            {# Autor #}
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <img
+                                        src="{{ commentary.author.profile.get_avatar_url }}"
+                                        alt="{{ commentary.author.username }}"
+                                        class="rounded-circle"
+                                        style="width: 32px; height: 32px; object-fit: cover; flex-shrink: 0;"
+                                    >
+                                    <div>
+                                        <strong>
+                                            {{ commentary.author.get_full_name|default:commentary.author.username }}
+                                        </strong>
+                                        <br>
+                                        <small class="text-muted">@{{ commentary.author.username }}</small>
+                                    </div>
+                                </div>
+                            </td>
+
+                            {# Contenido del comentario #}
+                            <td>
+                                <span>{{ commentary.content|truncatewords:20 }}</span>
+                                {% if commentary.was_edited %}
+                                    <br>
+                                    <span class="badge bg-info mt-1">Editado</span>
+                                {% endif %}
+                            </td>
+
+                            {# Post de origen #}
+                            <td>
+                                <a href="{% url 'blog:posts_detail' commentary.post.slug %}"
+                                   class="text-decoration-none">
+                                    {{ commentary.post.title|truncatewords:6 }}
+                                </a>
+                            </td>
+
+                            {# Fecha #}
+                            <td>
+                                <small class="text-muted">
+                                    {{ commentary.created_at|date:"d/m/Y H:i" }}
+                                </small>
+                            </td>
+
+                            {# Acciones #}
+                            <td>
+                                <div class="d-flex gap-1 flex-wrap">
+
+                                    {# Ver comentario en contexto #}
+                                    <a href="{% url 'blog:posts_detail' commentary.post.slug %}#comentarios"
+                                       class="btn btn-sm btn-info"
+                                       title="Ver en el post">
+                                        👁️ Ver
+                                    </a>
+
+                                    {# Revisar en detalle (approve_commentary) #}
+                                    <a href="{% url 'blog:approve_commentary' commentary.pk %}"
+                                       class="btn btn-sm btn-warning"
+                                       title="Revisar y decidir">
+                                        ⧗ Revisar
+                                    </a>
+
+                                    {# Aprobar directamente desde la tabla #}
+                                    <form method="post"
+                                          action="{% url 'blog:approve_commentary' commentary.pk %}"
+                                          style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="btn btn-sm btn-success"
+                                                title="Aprobar directamente">
+                                            ✓ Aprobar
+                                        </button>
+                                    </form>
+
+                                    {# Eliminar directamente #}
+                                    <a href="{% url 'blog:delete_commentary' commentary.post.slug commentary.pk %}"
+                                       class="btn btn-sm btn-danger"
+                                       title="Eliminar comentario">
+                                        🗑️
+                                    </a>
+
+                                </div>
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    {# ─── SI NO HAY PENDIENTES ─────────────────────────────────────────────── #}
+    {% else %}
+        <div class="alert alert-success" role="alert">
+            <h4 class="alert-heading">✅ ¡Todo al día!</h4>
+            <p>No hay comentarios pendientes de moderación.</p>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

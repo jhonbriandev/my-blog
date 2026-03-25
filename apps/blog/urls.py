@@ -1,13 +1,12 @@
 from django.urls import path
-from .views import PostListView, PostCreateView,PostDeleteView,PostDetailView,PostUpdateView,IndexView,MyCommentariesView,MyPostsView, ApprovePostView,PostsPendientesView
+from .views import PostListView, PostCreateView,PostDeleteView,PostDetailView,PostUpdateView,IndexView,MyCommentariesView,MyPostsView, ApprovePostView,PostsPendingView,AddCommentaryView,DeleteCommentaryView,ApproveCommentaryView,CommentariesPendingView,EditCommentaryView
 
 app_name = 'blog'
 
 urlpatterns = [
-    # POSTS
+    # INDEX PRINCIPAL
+    
     path('', IndexView.as_view(), name='index'),
-    path('posts/', PostListView.as_view(), name='posts_list'),
-    path('posts/create/', PostCreateView.as_view(), name='posts_create'),
 
     # PARA VER MIS POSTS
 
@@ -17,10 +16,30 @@ urlpatterns = [
     path('my-posts/', MyPostsView.as_view(), name='my_posts'),
     path('my-commentaries/', MyCommentariesView.as_view(), name='my_commentaries'),
 
-        # APROBACION DE POSTS
-    path('dashboard/',PostsPendientesView.as_view(), name='posts_pending'),
-    path('dashboard/<int:post_id>/approve/',ApprovePostView.as_view(), name='approve_post'),
+    # APROBACION DE POSTS
+
+    # Ruta donde se visualiza la lista de post pendientes
+    path('pending-p/',PostsPendingView.as_view(), name='posts_pending'),
+    # Ruta donde aprobaremos o rechazaremos el post
+    # El campo name obtiene el mismo nombre que colocamos en la {{ url }} del template
+    path('pending-p/<int:post_id>/approve/',ApprovePostView.as_view(), name='approve_post'),
     
+    
+    # COMENTARIOS
+
+        # <slug> identifica el post, <pk> identifica el comentario específico
+    path('<slug:slug>/comment/<int:pk>/edit/',EditCommentaryView.as_view(),name='edit_commentary'),
+    path('<slug:slug>/comment/<int:pk>/delete/',DeleteCommentaryView.as_view(), name='delete_commentary'),
+    path('<slug:slug>/comment/', AddCommentaryView.as_view(), name='add_commentary'),
+
+    # APROBACION DE COMENTARIOS
+
+    path('pending-c/',CommentariesPendingView.as_view(),name='commentaries_pending'),
+    path('pending-c/<int:commentary_id>/approve/',ApproveCommentaryView.as_view(), name='approve_commentary'),
+    # POSTS
+    
+    path('posts/', PostListView.as_view(), name='posts_list'),
+    path('posts/create/', PostCreateView.as_view(), name='posts_create'),
     path('<slug:slug>/', PostDetailView.as_view(), name='posts_detail'),
     path('<slug:slug>/update/', PostUpdateView.as_view(), name='posts_update'),
     path('<slug:slug>/delete/', PostDeleteView.as_view(), name='posts_delete'),
