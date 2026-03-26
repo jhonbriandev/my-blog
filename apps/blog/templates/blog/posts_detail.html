@@ -5,19 +5,23 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
-        <!-- POST -->
+
+        <!-- ═══════════════════════════════
+             POST PRINCIPAL
+        ═══════════════════════════════ -->
         <article class="mb-4">
+
             {% if post.featured_image %}
-                <img 
-                    src="{{ post.featured_image.url }}" 
-                    class="img-fluid mb-4" 
+                <img
+                    src="{{ post.featured_image.url }}"
+                    class="img-fluid mb-4"
                     alt="{{ post.title }}"
                     style="max-height: 400px; object-fit: cover; width: 100%;"
                 >
             {% endif %}
-            
+
             <h1>{{ post.title }}</h1>
-            
+
             <div class="text-muted mb-4">
                 <small>
                     📅 {{ post.published_at|date:"d \d\e F \d\e Y" }} |
@@ -26,7 +30,7 @@
                     💬 {{ post.count_commentaries }} comentarios
                 </small>
             </div>
-            
+
             {% if post.category %}
                 <div class="mb-3">
                     <a href="?categoria={{ post.category.slug }}" class="badge bg-info">
@@ -34,19 +38,21 @@
                     </a>
                 </div>
             {% endif %}
-            
-            <!-- CONTENIDO -->
+
+            <!-- CONTENIDO DEL POST -->
             <div class="post-content mb-4">
                 {{ post.content|linebreaks }}
             </div>
-            
-            <!-- INFO DEL AUTOR -->
+
+            <!-- ═══════════════════════════════
+                 TARJETA DEL AUTOR
+            ═══════════════════════════════ -->
             <div class="card bg-light mb-4">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-auto">
-                            <img 
-                                src="{{ post.author.profile.get_avatar_url }}" 
+                            <img
+                                src="{{ post.author.profile.get_avatar_url }}"
                                 alt="{{ post.author.username }}"
                                 class="rounded-circle"
                                 style="width: 80px; height: 80px; object-fit: cover;"
@@ -55,24 +61,27 @@
                         <div class="col">
                             <h5>{{ post.author.get_full_name }}</h5>
                             <p class="text-muted">{{ post.author.profile.bio }}</p>
+
                             {% if user == post.author %}
-                            <!-- Si el visitante ES el autor, lo manda a su propio perfil editable -->
-                            <a href="{% url 'users:profile' %}" class="btn btn-sm btn-outline-primary">
-                                Mi Perfil
-                            </a>
+                                {# El visitante ES el autor → muestra su perfil editable #}
+                                <a href="{% url 'users:profile' %}" class="btn btn-sm btn-outline-primary">
+                                    Mi Perfil
+                                </a>
                             {% else %}
-                            <!-- Si el visitante NO es el autor, muestra el perfil público del autor -->
-                            <!-- post.author.id es el número único que identifica al autor en la BD -->
-                            <a href="{% url 'users:public_profile' post.author.id %}" class="btn btn-sm btn-outline-primary">
-                                Ver Perfil
-                            </a>
+                                {# El visitante NO es el autor → muestra perfil público #}
+                                <a href="{% url 'users:public_profile' post.author.id %}" class="btn btn-sm btn-outline-primary">
+                                    Ver Perfil
+                                </a>
                             {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- BOTONES DE EDICIÓN (si eres autor, admin o mod) -->
+
+            <!-- ═══════════════════════════════
+                 BOTONES EDITAR / ELIMINAR
+                 Solo visible para autor, admin o moderador
+            ═══════════════════════════════ -->
             {% if user == post.author or user.profile.can_moderate %}
                 <div class="mb-4">
                     <a href="{% url 'blog:posts_update' post.slug %}" class="btn btn-warning btn-sm">
@@ -83,30 +92,30 @@
                     </a>
                 </div>
             {% endif %}
-        </article>
-        
-        <hr>
-        
-            <!-- COMENTARIOS -->
-            <h3 id="comentarios" class="mb-4">
-                💬 Comentarios ({{ post.count_commentaries }})
-            </h3>
-            {# El formulario solo aparece si los comentarios están habilitados #}
-            {% if post.commentaries_permission %}
-                {% if user.is_authenticated %}
-                    {% include 'blog/commentaries/commentary_form.html' %}
-                {% else %}
-                    <div class="alert alert-info">
-                        <a href="{% url 'users:login' %}">Inicia sesión</a> para comentar
-                    </div>
-                {% endif %}
-            {% endif %}
 
-            {# La lista siempre se incluye — ella misma decide qué mostrar #}
-            {% include 'blog/commentaries/commentary_list.html' with commentaries=commentaries_with_permissions %}   
+        </article>
+
+        <hr>
+
+        <!-- ═══════════════════════════════
+             SECCIÓN DE COMENTARIOS
+             
+             El include va SIEMPRE aquí fuera, sin if de autenticación.
+             commentaries_section.html ya maneja internamente:
+               - Si mostrar el formulario (requiere login)
+               - Si mostrar la lista (siempre visible)
+               - Si los comentarios están deshabilitados
+             
+             Solo preguntamos si el post EXISTE como objeto,
+             que siempre es true si llegamos a esta vista.
+        ═══════════════════════════════ -->
+        {% include 'blog/commentaries/commentaries_section.html' %}
+
     </div>
-    
-    <!-- SIDEBAR DERECHO -->
+
+    <!-- ═══════════════════════════════
+         SIDEBAR — POSTS RELACIONADOS
+    ═══════════════════════════════ -->
     <div class="col-lg-4">
         {% if relationed_posts %}
             <div class="card">
@@ -114,8 +123,8 @@
                     <h5 class="card-title">📖 Relacionados</h5>
                     <div class="list-group list-group-sm">
                         {% for rel_posts in relationed_posts %}
-                            <a 
-                                href="{% url 'blog:posts_detail' rel_posts.slug %}" 
+                            
+                            <a href="{% url 'blog:posts_detail' rel_posts.slug %}"
                                 class="list-group-item list-group-item-action"
                             >
                                 {{ rel_posts.title|truncatewords:5 }}
@@ -126,5 +135,6 @@
             </div>
         {% endif %}
     </div>
+
 </div>
 {% endblock %}

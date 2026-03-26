@@ -35,7 +35,7 @@
                     </li>
 
                     <!-- Pestaña Dashboard solo visible para admin o moderador -->
-
+                    {% if user.profile.can_moderate %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" 
                                id="dashboardMenu" role="button" 
@@ -44,7 +44,14 @@
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="dashboardMenu">
                                 <!-- Posts pendientes de aprobación -->
-                                <!-- Si no es admin, esta pestaña directamente no aparece -->
+                        
+                                <!-- user.profile.can_moderate para admin o mod -->
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'blog:commentaries_pending' %}">
+                                        ⧗ Comentarios Pendientes
+                                    </a>
+                                </li>
+                                 <!-- Si no es admin, esta pestaña directamente no aparece -->
                                 {% if user.profile.is_admin %}
                                 <li>
                                     <a class="dropdown-item" href="{% url 'blog:posts_pending' %}">
@@ -52,17 +59,9 @@
                                     </a>
                                 </li>
                                 {% endif %}
-                                <!-- user.profile.can_moderate para admin o mod -->
-                                {% if user.profile.can_moderate %}
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'blog:commentaries_pending' %}">
-                                        ⧗ Comentarios Pendientes
-                                    </a>
-                                </li>
-                                {% endif %}
                             </ul>
                         </li>
-                    
+                    {% endif %}
                     <!-- Dropdown usuario -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" 

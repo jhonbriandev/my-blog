@@ -12,6 +12,12 @@ class ProfileUser(models.Model):
             # Para usos del related name
             # Estás en Profile y quieres datos del User → usa perfil.use
             # Estás en User y quieres datos del Profile → usa usuario.profile
+    """La llave foranea user llega de User
+        Se establece en ProfileUser(esta tabla)
+        Para buscar o usar los campos de esta tabla o sus metodos
+        Desde ahora en adelante se usara el related name no el nombre de tabla
+        Se usara entonces 'profile'    
+    """
     user = models.OneToOneField(User,on_delete = models.CASCADE, related_name= 'profile', primary_key = True)
     rol = models.CharField(max_length= 20, choices= ROLE_CHOICES, default='user', help_text='Rol del usuario. Admin solo puede ser asignado por superuser')
     bio = models.TextField(max_length=500, blank=True, null = True,  help_text='Biografía del usuario (máximo 500 caracteres)')

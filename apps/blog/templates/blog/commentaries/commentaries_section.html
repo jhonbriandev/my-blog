@@ -1,0 +1,380 @@
+<!--═══════════════════════════════════════════════════════════════════════════
+   commentaries_section.html
+   
+   Template ÚNICO para toda la sección de comentarios de un post.
+   Reemplaza los tres templates anteriores:
+     - commentary_list.html    → la lógica de lista y mensajes vacíos
+     - commentary_form.html    → el formulario para escribir un comentario
+     - commentary_detail.html  → la tarjeta de cada comentario y sus respuestas
+   
+   Variables que recibe desde PostDetailView:
+     - post                        → el objeto Post completo
+     - commentaries_with_permissions → lista de dicts con:
+           {
+             'commentary': <Commentary>,
+             'can_edit':   <bool>,
+             'can_delete': <bool>,
+             'responses':  [ { 'commentary': ..., 'can_edit': ..., 'can_delete': ... } ]
+           }
+     - form_commentary             → CommentaryForm (solo si el usuario está logueado)
+     - request.user                → el usuario actual (autenticado o anónimo)
+   
+   NOTA SOBRE EL <script>:
+   toggleReplyForm() se declara UNA SOLA VEZ al final de este template.
+   Como este template se incluye con {#% include %#} una sola vez en
+   posts_detail.html (fuera de cualquier loop), no hay riesgo de duplicación.
+   ═══════════════════════════════════════════════════════════════════════════
+
+
+── TÍTULO DE LA SECCIÓN ─ -->
+<h3 id="comentarios" class="mb-4">
+    💬 Comentarios ({{ post.count_commentaries }})
+</h3>
+
+<!--══════════════════════════════════════════════════════
+   BLOQUE 1 — FORMULARIO PRINCIPAL (comentario nuevo)
+   Solo se muestra si:
+     a) El post tiene los comentarios habilitados (commentaries_permission=True)
+     b) El usuario está autenticado
+   Si no está autenticado, mostramos un aviso con link al login.
+   ══════════════════════════════════════════════════════ -->
+
+{% if post.commentaries_permission %}
+
+    {% if request.user.is_authenticated %}
+        <form method="POST" action="{% url 'blog:add_commentary' post.slug %}">
+            {% csrf_token %}
+
+            {# Sin campo oculto 'response_to' → AddCommentaryView lo trata como comentario raíz #}
+
+            <div class="mb-3">
+                {{ form_commentary.content }}
+            </div>
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    Comentar
+                </button>
+            </div>
+        </form>
+
+    {% else %}
+        {# Usuario no autenticado: invitamos a iniciar sesión #}
+        <div class="alert alert-info">
+            <a href="{% url 'users:login' %}">Inicia sesión</a> para comentar
+        </div>
+    {% endif %}
+
+{% endif %}
+{# Fin bloque formulario principal #}
+
+
+<!--══════════════════════════════════════════════════════
+   BLOQUE 2 — LISTA DE COMENTARIOS
+   Tres casos posibles:
+     A) Hay comentarios aprobados → los mostramos
+     B) No hay comentarios, pero sí están habilitados → mensaje "sé el primero"
+     C) Los comentarios están deshabilitados → aviso al usuario
+   ══════════════════════════════════════════════════════ -->
+
+{% if commentaries_with_permissions %}
+
+    {# CASO A: hay comentarios que mostrar #}
+    <div class="comments-list mt-4">
+
+        {% for item in commentaries_with_permissions %}
+        <!--──────────────────────────────────────────────────────
+           TARJETA DE COMENTARIO RAÍZ
+           Cada 'item' es un dict con:
+             item.commentary  → el objeto Commentary
+             item.can_edit    → bool calculado en PostDetailView
+             item.can_delete  → bool calculado en PostDetailView
+             item.responses   → lista de dicts igual que item pero de respuestas
+           
+           Los permisos llegan YA calculados desde la vista — NO los
+           calculamos aquí porque en los templates Django no podemos
+           pasar argumentos a métodos (ej: commentary.can_be_edited_by(user)
+           no funciona en Jinja/DTL sin argumentos).
+        ────────────────────────────────────────────────────── -->
+        <div class="card mb-3" id="commentary-{{ item.commentary.pk }}">
+            <div class="card-body">
+
+                {# ── CABECERA: avatar + nombre + fecha ── #}
+                <div class="d-flex">
+                    <img
+                        src="{{ item.commentary.author.profile.get_avatar_url }}"
+                        alt="{{ item.commentary.author.username }}"
+                        class="rounded-circle me-3"
+                        style="width: 40px; height: 40px; object-fit: cover;"
+                    >
+                    <div class="flex-grow-1">
+
+                        <h6 class="card-subtitle mb-1">
+                            {{ item.commentary.author.get_full_name|default:item.commentary.author.username }}
+                        </h6>
+
+                        <p class="text-muted small">
+                            {{ item.commentary.created_at|timesince }} atrás
+                            {# Si fue editado, lo indicamos con una etiqueta discreta #}
+                            {% if item.commentary.was_edited %}
+                                <span class="badge bg-light text-secondary ms-1"
+                                      style="font-size:0.65rem">
+                                    editado
+                                </span>
+                            {% endif %}
+                        </p>
+
+                        {# ── CONTENIDO DEL COMENTARIO ── #}
+                        <p class="card-text">{{ item.commentary.content }}</p>
+
+                        <!--BOTONES EDITAR / ELIMINAR ──
+                           can_edit y can_delete llegan desde PostDetailView.
+                           Regla de negocio (definida en UserProfile):
+                             - can_edit   → solo el autor del comentario
+                             - can_delete → autor del comentario, autor del post, admin o mod
+                          -->
+                        {% if item.can_edit or item.can_delete %}
+                        <small>
+                            {% if item.can_edit %}
+                                <a href="{% url 'blog:edit_commentary' item.commentary.post.slug item.commentary.pk %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Editar
+                                </a>
+                            {% endif %}
+                            {% if item.can_delete %}
+                                <a href="{% url 'blog:delete_commentary' item.commentary.post.slug item.commentary.pk %}"
+                                   class="btn btn-sm btn-outline-danger">
+                                    Eliminar
+                                </a>
+                            {% endif %}
+                        </small>
+                        {% endif %}
+
+                        <!--BOTÓN RESPONDER ──
+                           Solo visible para usuarios autenticados.
+                           Al hacer clic llama a toggleReplyForm() con el id
+                           único de este form (reply-form-<pk>).
+                           El id único evita que al abrir una respuesta
+                           se abran todas al mismo tiempo.
+                        ──-->
+                        {% if request.user.is_authenticated %}
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-secondary ms-1"
+                                onclick="toggleReplyForm('reply-form-{{ item.commentary.pk }}')"
+                            >
+                                💬 Responder
+                            </button>
+                        {% endif %}
+
+                    </div>
+                </div>
+                {# Fin cabecera #}
+
+
+                <!--══════════════════════════════════════════════════════
+                   FORMULARIO DE RESPUESTA (oculto por defecto)
+                   
+                   Está DENTRO de la tarjeta del comentario padre para
+                   que quede claro visualmente a quién se responde.
+                   
+                   ms-5 + border-start = sangría visual que indica
+                   que este form es "hijo" del comentario de arriba.
+                   
+                   El campo oculto 'response_to' le dice a AddCommentaryView
+                   que este es una respuesta, no un comentario raíz.
+                ══════════════════════════════════════════════════════-->
+                {% if request.user.is_authenticated %}
+                <div id="reply-form-{{ item.commentary.pk }}"
+                     class="reply-form mt-3 ms-5 ps-3 border-start border-2"
+                     style="display:none">
+
+                    <p class="text-muted small mb-2">
+                        Respondiendo a
+                        <strong>
+                            {{ item.commentary.author.get_full_name|default:item.commentary.author.username }}
+                        </strong>
+                    </p>
+
+                    <form method="post"
+                          action="{% url 'blog:add_commentary' item.commentary.post.slug %}">
+                        {% csrf_token %}
+
+                        <!--Campo oculto CLAVE:
+                           Sin este campo AddCommentaryView crea un comentario raíz.
+                           Con este campo sabe que debe ligar este comentario
+                           como respuesta del comentario con pk={{ item.commentary.pk }}.
+                        -->
+                        <input type="hidden"
+                               name="response_to"
+                               value="{{ item.commentary.pk }}">
+
+                        <div class="mb-2">
+                            <label for="{{ form_commentary.content.id_for_label }}"></label>
+                            {{ form_commentary.content }}
+                        </div>
+
+                        <button type="submit" class="btn btn-sm btn-primary mb-2">
+                            Enviar respuesta
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-secondary ms-1"
+                            onclick="toggleReplyForm('reply-form-{{ item.commentary.pk }}')"
+                        >
+                            Cancelar
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+                {# Fin formulario de respuesta #}
+
+
+                <!--══════════════════════════════════════════════════════
+                   RESPUESTAS APROBADAS
+                   
+                   'item.responses' llega desde PostDetailView como lista
+                   de dicts con la misma estructura que 'item':
+                   { commentary, can_edit, can_delete }
+                   
+                   ms-5 = margen izquierdo para reforzar visualmente
+                   la jerarquía: respuesta está "dentro" del comentario padre.
+                   
+                   Avatar más pequeño (32px vs 40px) refuerza también
+                   la jerarquía visual.
+                ══════════════════════════════════════════════════════-->
+                {% if item.responses %}
+                <div class="mt-3 ms-5">
+
+                    {% for res_item in item.responses %}
+                    <div class="d-flex mt-2 pt-2 border-top"
+                         id="commentary-{{ res_item.commentary.pk }}">
+
+                        {# Avatar más pequeño para respuestas #}
+                        <img
+                            src="{{ res_item.commentary.author.profile.get_avatar_url }}"
+                            alt="{{ res_item.commentary.author.username }}"
+                            class="rounded-circle me-3"
+                            style="width: 32px; height: 32px; object-fit: cover;"
+                        >
+                        <div class="flex-grow-1">
+
+                            <h6 class="card-subtitle mb-1">
+                                {{ res_item.commentary.author.get_full_name|default:res_item.commentary.author.username }}
+                                {# Badge que identifica visualmente que es una respuesta #}
+                                <span class="badge bg-secondary ms-1"
+                                      style="font-size:0.65rem">
+                                    ↳ Respuesta
+                                </span>
+                            </h6>
+
+                            <p class="text-muted small">
+                                {{ res_item.commentary.created_at|timesince }} atrás
+                                {% if res_item.commentary.was_edited %}
+                                    <span class="badge bg-light text-secondary ms-1"
+                                          style="font-size:0.65rem">
+                                        editado
+                                    </span>
+                                {% endif %}
+                            </p>
+
+                            <p class="card-text">{{ res_item.commentary.content }}</p>
+
+                            <!--Misma lógica de permisos que el comentario raíz.
+                               Los permisos ya vienen calculados desde PostDetailView.-->
+                            {% if res_item.can_edit or res_item.can_delete %}
+                            <small>
+                                {% if res_item.can_edit %}
+                                    <a href="{% url 'blog:edit_commentary' res_item.commentary.post.slug res_item.commentary.pk %}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Editar
+                                    </a>
+                                {% endif %}
+                                {% if res_item.can_delete %}
+                                    <a href="{% url 'blog:delete_commentary' res_item.commentary.post.slug res_item.commentary.pk %}"
+                                       class="btn btn-sm btn-outline-danger">
+                                        Eliminar
+                                    </a>
+                                {% endif %}
+                            </small>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                </div>
+                {% endif %}
+                {# Fin respuestas #}
+
+            </div>
+        </div>
+        {# Fin tarjeta comentario raíz #}
+
+        {% endfor %}
+    </div>
+    {# Fin lista de comentarios #}
+
+
+{% else %}
+
+    {# CASO B y C: la lista está vacía — distinguimos POR QUÉ #}
+
+    {% if post.commentaries_permission %}
+        {# CASO B: Los comentarios SÍ están habilitados pero no hay ninguno aún #}
+        {% if request.user.is_authenticated %}
+            <div class="alert alert-info mt-3">
+                Sé el primero en comentar
+            </div>
+        {% endif %}
+
+    {% else %}
+        {# CASO C: Los comentarios están deshabilitados explícitamente en el post #}
+        <div class="alert alert-warning mt-3">
+            Los comentarios están deshabilitados en este post
+        </div>
+    {% endif %}
+
+{% endif %}
+{# Fin lista de comentarios #}
+
+
+<!--══════════════════════════════════════════════════════
+   JAVASCRIPT — toggleReplyForm()
+   
+   Una sola función para TODOS los botones "Responder" de la página.
+   
+   Lógica:
+   1. Revisa si el form clickeado ya está abierto
+   2. Cierra TODOS los formularios de respuesta abiertos
+      (solo uno visible a la vez — más limpio)
+   3. Si estaba cerrado, lo abre y pone el foco en el textarea
+      para que el usuario pueda escribir de inmediato
+   
+   ¿Por qué aquí y no en el template padre?
+   Porque este template se incluye UNA SOLA VEZ con {#% include %#}
+   fuera de cualquier loop, así que el <script> no se repite.
+   Si en el futuro prefieres moverlo al template padre (posts_detail.html)
+   dentro del bloque {#% block scripts %#}, también funciona igual.
+══════════════════════════════════════════════════════ -->
+<script>
+function toggleReplyForm(formId) {
+    const form = document.getElementById(formId);
+
+    // Guardamos si estaba abierto ANTES de cerrar todo
+    // (si ya estaba abierto, el clic funciona como "Cancelar")
+    const estaAbierto = form.style.display !== 'none';
+
+    // Cerramos todos los formularios de respuesta abiertos
+    document.querySelectorAll('.reply-form').forEach(f => {
+        f.style.display = 'none';
+    });
+
+    // Solo abrimos si estaba cerrado (toggle real)
+    if (!estaAbierto) {
+        form.style.display = 'block';
+        // Enfocamos el textarea para escritura inmediata
+        const textarea = form.querySelector('textarea');
+        if (textarea) textarea.focus();
+    }
+}
+</script>

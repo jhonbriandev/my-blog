@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Perfil de {{ profile_user.username }} - Blog Django{% endblock %}
+{% block title %}Perfil de {{ public_profile.username }} - Blog Django{% endblock %}
 
 {% block content %}
 
@@ -8,54 +8,73 @@
 
     <!-- ═══════════════════════════════════════════
          SIDEBAR — Foto e info básica del autor
-         Usamos profile_user (el autor visitado)
-         NO usamos 'user' que es el visitante logueado
+
+         IMPORTANTE — Aquí hay DOS objetos distintos:
+         
+         ┌─────────────────────────────────────────────┐
+         │  public_profile(Nombre elegido en la view)  │
+         │  (modelo User de Django)                    │
+         │  → username, email, date_joined, password   │
+         │                                             │
+         │      └── .profile                           │
+         │          (Nuestro modelo Profile)           │
+         │          → bio, avatar, is_admin            │
+         └─────────────────────────────────────────────┘
+         
+         Por eso escribimos public_profile.profile.algo:
+         Primero llegamos al User, luego saltamos a Profile
     ════════════════════════════════════════════ -->
     <div class="col-md-4">
         <div class="card mb-3">
             <div class="card-body text-center">
 
-                <!-- Foto de perfil del AUTOR visitado -->
-                <!-- get_avatar_url() retorna foto o avatar por defecto -->
+                <!-- 
+                    public_profile       → el objeto User (la persona)
+                    public_profile.profile      → su objeto Profile (el fotocheck)
+                    public_profile.profile.get_avatar_url → método en Profile que 
+                                            devuelve la foto o un avatar por defecto
+                -->
                 <img
-                    src="{{ profile_le.get_avatar_url }}"
-                    alt="{{ profile_user.username }}"
+                    src="{{ public_profile.profile.get_avatar_url }}"
+                    alt="{{ public_profile.username }}"
                     class="rounded-circle mb-3"
                     style="width: 150px; height: 150px; object-fit: cover;"
                 >
 
-                <!-- Nombre completo del autor -->
-                <!-- get_fullname() retorna nombre completo o username si está vacío -->
-                <h3 class="card-title">{{ profile_le.get_fullname }}</h3>
+                <!-- 
+                    get_fullname → método en Profile que devuelve
+                    "Nombre Apellido" o el username si están vacíos
+                -->
+                <h3 class="card-title">{{ public_profile.profile.get_fullname }}</h3>
 
-                <!-- Username del autor -->
-                <p class="text-muted">@{{ profile_user.username }}</p>
+                <!-- username → campo del modelo User (no del Profile) -->
+                <p class="text-muted">@{{ public_profile.username }}</p>
 
-                <!-- Rol del autor -->
+                <!-- 
+                    is_admin / is_moderator → propiedades de tu modelo Profile
+                    por eso necesitamos el .profile en el medio
+                -->
                 <p class="mb-3">
-                    {% if profile_user.profile.is_admin %}
+                    {% if public_profile.profile.is_admin %}
                         <span class="badge bg-danger">Administrador</span>
-                    {% elif profile_user.profile.is_moderator %}
+                    {% elif public_profile.profile.is_moderator %}
                         <span class="badge bg-warning">Moderador</span>
                     {% else %}
                         <span class="badge bg-info">Usuario</span>
                     {% endif %}
                 </p>
 
-                <!-- Fecha de registro del autor -->
-                <!-- date_joined es campo nativo del modelo User de Django -->
+                <!-- date_joined → campo del modelo User, no necesita .profile -->
                 <p class="text-muted">
-                    <small>📅 Miembro desde {{ profile_user.date_joined|date:"F Y" }}</small>
+                    <small>📅 Miembro desde {{ public_profile.date_joined|date:"F Y" }}</small>
                 </p>
 
-                <!-- ─────────────────────────────────────────
-                     Botón de editar SOLO si el visitante
-                     está viendo SU PROPIO perfil público.
-                     
-                     user = visitante logueado
-                     profile_user = dueño del perfil
-                ──────────────────────────────────────── -->
-                {% if user == profile_user %}
+                <!-- 
+                    user        → visitante logueado (lo da Django automáticamente)
+                    public_profile  → dueño del perfil que se está viendo
+                    Si son la misma persona → mostrar botón de editar
+                -->
+                {% if user == public_profile %}
                     <a href="{% url 'users:edit_profile' %}" class="btn btn-primary btn-sm">
                         ✏️ Editar mi Perfil
                     </a>
@@ -65,23 +84,22 @@
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════
-         CONTENIDO PRINCIPAL — Bio, stats y posts
-    ════════════════════════════════════════════ -->
     <div class="col-md-8">
 
-        <!-- Biografía del autor (solo si tiene) -->
-        {% if profile_user.profile.bio %}
+        <!-- bio → campo de tu modelo Profile, necesita el .profile -->
+        {% if public_profile.profile.bio %}
             <div class="card mb-3">
                 <div class="card-body">
                     <h5 class="card-title">Sobre mí</h5>
-                    <p class="card-text">{{ profile_user.profile.bio }}</p>
+                    <p class="card-text">{{ public_profile.profile.bio }}</p>
                 </div>
             </div>
         {% endif %}
 
-        <!-- Estadísticas del autor -->
-        <!-- posts_count y commentaries_count vienen desde la vista -->
+        <!-- 
+            posts_count y commentaries_count vienen calculados
+            desde la vista, no necesitan .profile
+        -->
         <div class="row mb-3">
             <div class="col-md-6">
                 <div class="card text-center">
@@ -101,7 +119,6 @@
             </div>
         </div>
 
-        <!-- Últimos posts publicados del autor -->
         <!-- user_posts viene desde la vista, son los 5 más recientes -->
         {% if user_posts %}
             <div class="card">
@@ -109,19 +126,15 @@
                     <h5 class="card-title">📝 Últimos Posts</h5>
                     <div class="list-group">
                         {% for post in user_posts %}
-                            <a
-                                href="{% url 'blog:posts_detail' post.slug %}"
+                            <a href="{% url 'blog:posts_detail' post.slug %}"
                                 class="list-group-item list-group-item-action"
                             >
                                 <div class="d-flex justify-content-between">
-                                    <!-- Título del post (cortado a 8 palabras) -->
                                     <span>{{ post.title|truncatewords:8 }}</span>
-                                    <!-- Fecha de publicación -->
                                     <small class="text-muted">
                                         {{ post.published_at|date:"d/m/Y" }}
                                     </small>
                                 </div>
-                                <!-- Resumen del post (cortado a 15 palabras) -->
                                 {% if post.summary %}
                                     <small class="text-muted">{{ post.summary|truncatewords:15 }}</small>
                                 {% endif %}
@@ -131,7 +144,6 @@
                 </div>
             </div>
         {% else %}
-            <!-- Mensaje si el autor no tiene posts publicados aún -->
             <div class="alert alert-info">
                 Este usuario aún no ha publicado posts.
             </div>

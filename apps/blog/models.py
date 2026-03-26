@@ -268,7 +268,7 @@ class Commentary(models.Model):
         return (
             user == self.author or       # el autor del comentario
             user == self.post.author or  # el autor del post
-            user.profile.is_admin()      # o un administrador
+            user.profile.is_admin      # o un administrador
         )
 
     def can_be_eliminated_by(self, user):
@@ -278,7 +278,7 @@ class Commentary(models.Model):
         return (
             user == self.author or
             user == self.post.author or
-            user.profile.is_admin()
+            user.profile.is_admin
         )
 
     def get_response(self):

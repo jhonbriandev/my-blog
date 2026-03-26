@@ -7,28 +7,123 @@
                 class="rounded-circle me-3"
                 style="width: 40px; height: 40px; object-fit: cover;"
             >
-            <div>
+            <div class="flex-grow-1">
+                <h6 class="card-subtitle mb-1">
+                    {{ item.commentary.author.get_full_name|default:item.commentary.author.username }}
+                </h6>
+                <p class="text-muted small">
+                    {{ item.commentary.created_at|timesince }} atrás
+                </p>
+                <p class="card-text">{{ item.commentary.content }}</p>
+
+                {# Botones editar/eliminar del comentario raíz #}
+                {% if item.can_edit or item.can_delete %}
+                <small>
+                    {% if item.can_edit %}
+                        <a href="{% url 'blog:edit_commentary' item.commentary.post.slug item.commentary.pk %}"
+                           class="btn btn-sm btn-outline-primary">
+                            Editar
+                        </a>
+                    {% endif %}
+                    {% if item.can_delete %}
+                        <a href="{% url 'blog:delete_commentary' item.commentary.post.slug item.commentary.pk %}"
+                           class="btn btn-sm btn-outline-danger">
+                            Eliminar
+                        </a>
+                    {% endif %}
+                </small>
+                {% endif %}
+
+                {# Botón responder — solo usuarios autenticados #}
+                {# Al hacer clic llama a toggleReplyForm() con el id único del form #}
+                {% if request.user.is_authenticated %}
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary ms-1"
+                        onclick="toggleReplyForm('reply-form-{{ item.commentary.pk }}')"
+                    >
+                        💬 Responder
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── FORM DE RESPUESTA (oculto por defecto) ── #}
+        {# Está DENTRO del card del comentario padre para que visualmente #}
+        {# quede claro que pertenece a ese comentario #}
+        {% if request.user.is_authenticated %}
+        <div id="reply-form-{{ item.commentary.pk }}"
+             class="reply-form mt-3 ms-5 ps-3 border-start border-2"
+             style="display:none">
+            <p class="text-muted small mb-2">
+                {# Le recordamos al usuario a quién está respondiendo #}
+                Respondiendo a <strong>{{ item.commentary.author.get_full_name|default:item.commentary.author.username }}</strong>
+            </p>
+            <form method="post" action="{% url 'blog:add_commentary' item.commentary.post.slug %}">
+                {% csrf_token %}
+
+                {# Campo oculto que le dice a AddCommentaryView cuál es el comentario padre #}
+                {# Sin este campo, la vista crea un comentario raíz normal #}
+                <input type="hidden" name="response_to" value="{{ item.commentary.pk }}">
+
+                {{ form_commentary.as_p }}
+
+                <button type="submit" class="btn btn-sm btn-primary">
+                    Enviar respuesta
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary ms-1"
+                    onclick="toggleReplyForm('reply-form-{{ item.commentary.pk }}')"
+                >
+                    Cancelar
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        {# ── RESPUESTAS APROBADAS ── #}
+        {# ms-5 = margen izquierdo para el efecto de anidamiento visual #}
+        {% if item.responses %}
+        <div class="mt-3 ms-5">
+            {% for res_item in item.responses %}
+            <div class="d-flex mt-2 pt-2 border-top"
+                 id="commentary-{{ res_item.commentary.pk }}">
+
+                {# Avatar más pequeño para las respuestas (32px vs 40px del padre) #}
+                {# Esto refuerza visualmente la jerarquía: respuesta < comentario #}
+                <img
+                    src="{{ res_item.commentary.author.profile.get_avatar_url }}"
+                    alt="{{ res_item.commentary.author.username }}"
+                    class="rounded-circle me-3"
+                    style="width: 32px; height: 32px; object-fit: cover;"
+                >
                 <div class="flex-grow-1">
                     <h6 class="card-subtitle mb-1">
-                    {{ item.commentary.author.get_full_name|default:item.commentary.author.username }}
+                        {{ res_item.commentary.author.get_full_name|default:res_item.commentary.author.username }}
+                        {# Badge que distingue visualmente que es una respuesta #}
+                        <span class="badge bg-secondary ms-1" style="font-size:0.65rem">
+                            ↳ Respuesta
+                        </span>
                     </h6>
                     <p class="text-muted small">
-                    {{ item.commentary.created_at|timesince }} atrás
+                        {{ res_item.commentary.created_at|timesince }} atrás
                     </p>
-                    <p class="card-text">{{ item.commentary.content }}</p>
-                                        
-                    {# Usamos item.can_edit e item.can_delete — ya calculados en la vista #}
-                    {# Ya no necesitamos verificar user == author aquí, la vista lo hizo #}
-                    {% if item.can_edit or item.can_delete %}
+                    <p class="card-text">{{ res_item.commentary.content }}</p>
+
+                    {# Misma lógica de permisos que el comentario raíz #}
+                    {# Los permisos ya vienen calculados desde PostDetailView #}
+                    {% if res_item.can_edit or res_item.can_delete %}
                     <small>
-                        {% if item.can_edit %}
-                            <a href="{% url 'blog:edit_commentary' item.commentary.post.slug item.commentary.pk %}">
+                        {% if res_item.can_edit %}
+                            <a href="{% url 'blog:edit_commentary' res_item.commentary.post.slug res_item.commentary.pk %}"
+                               class="btn btn-sm btn-outline-primary">
                                 Editar
                             </a>
                         {% endif %}
-
-                        {% if item.can_delete %}
-                            <a href="{% url 'blog:delete_commentary' item.commentary.post.slug item.commentary.pk %}">
+                        {% if res_item.can_delete %}
+                            <a href="{% url 'blog:delete_commentary' res_item.commentary.post.slug res_item.commentary.pk %}"
+                               class="btn btn-sm btn-outline-danger">
                                 Eliminar
                             </a>
                         {% endif %}
@@ -36,6 +131,38 @@
                     {% endif %}
                 </div>
             </div>
+            {% endfor %}
         </div>
+        {% endif %}
+        {# ── FIN RESPUESTAS ── #}
+
     </div>
 </div>
+
+{# ── JAVASCRIPT ── #}
+{# Una sola función para todos los botones "Responder" de la página. #}
+{# Se coloca UNA SOLA VEZ — si este template se incluye con {% include %} #}
+{# dentro de un loop, el script se repetiría. Lo correcto es moverlo #}
+{# al template padre (posts_detail.html) fuera del loop de comentarios. #}
+<script>
+function toggleReplyForm(formId) {
+    const form = document.getElementById(formId);
+
+    // Si el form está oculto lo mostramos, si está abierto lo cerramos
+    // Pero primero cerramos TODOS los otros forms abiertos
+    // (solo uno abierto a la vez — más limpio visualmente)
+    const estaAbierto = form.style.display !== 'none';
+
+    document.querySelectorAll('.reply-form').forEach(f => {
+        f.style.display = 'none';
+    });
+
+    if (!estaAbierto) {
+        form.style.display = 'block';
+        // Enfocamos el textarea para que el usuario pueda escribir de inmediato
+        // querySelector busca el primer textarea dentro de este form específico
+        const textarea = form.querySelector('textarea');
+        if (textarea) textarea.focus();
+    }
+}
+</script>

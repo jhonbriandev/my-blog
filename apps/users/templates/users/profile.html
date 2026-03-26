@@ -13,7 +13,7 @@
                 <!-- Foto de perfil -->
                 <!-- Usando el metodo de models-->
                 <img
-                    src = "{{ profile.get_avatar_url}}"
+                    src = "{{ profile.get_avatar_url }}"
                     alt = "{{ user.username }}"
                     class= "rounded-circle mb-3"
                     style= "width: 150px; height : 150px; object-fit: cover;"
@@ -27,6 +27,8 @@
                 <p class = "mb-3">
                     {% if profile.is_admin %}
                         <span class="badge bg-danger">Administrador</span>
+                    {% elif profile.can_moderate %}
+                        <span class = "badge bg-warning"> Moderador</span>
                     {% else %}
                         <span class="badge bg-info">Usuario</span>
                     {% endif %}
@@ -36,25 +38,30 @@
                     <small>{{ user.email }}</small>
                 </p>
                 <!-- Boton Editar-->
-                <a href="{% url 'users:edit_profile' %}
-                " class="btn btn-primary btn-sm"> Editar Perfil</a>
+                <div class="col-md-3">
+                    <a href="{% url 'users:edit_profile' %}
+                        " class="btn btn-primary btn-sm "> Editar Perfil
+                    </a>
+                </div>   
             </div>
         </div>
     </div>
     <!-- Contenido Principal -->
-    <div class="col-md-8">
-            <!-- Biografía -->
-            {% if profile.bio %}
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h5 class="card-title">Biografía</h5>
-                        <p class="card-text">{{ profile.bio }}</p>
-                    </div>
+    <div class="col-md-12">
+        <!-- Biografía -->
+        {% if profile.bio %}
+            <div class="card mb-3 mt-2">
+                <div class="card-body">
+                    <h5 class="card-title">Biografía</h5>
+                    <p class="card-text">{{ profile.bio }}</p>
                 </div>
-            {% endif %}
-
-            <!-- Estadísticas -->
-            <div class="row mb-3">
+            </div>
+        {% endif %}
+    </div>
+        
+    <!-- Estadísticas -->
+        <div class = "row"> 
+            <div class="col-md-6 mt-2">
                 <!-- BLOQUE: Tarjeta de Posts clicable -->
                 <a href="{% url 'blog:my_posts' %}" class="text-decoration-none">
                     <div class="card text-center">
@@ -65,15 +72,18 @@
                         </div>
                     </div>
                 </a>
-                <div class="col-md-6">
+            </div>
+            <div class="col-md-6">
+                <a href="{% url 'blog:my_commentaries' %}" class="text-decoration-none">
                     <div class="card text-center">
                         <div class="card-body">
                             <h5>Comentarios</h5>
-                            <h3 class="text-success">{{ commentaries_count }}</h3>
+                            <h3 class="text-warning">{{ commentaries_count }}</h3>
+                            <small class="text-muted">Ver mis Comentarios →</small>
                         </div>
                     </div>
-                </div>
-            </div>        
-    </div>
+                </a>
+            </div>
+        </div>        
 </div>
 {% endblock %}

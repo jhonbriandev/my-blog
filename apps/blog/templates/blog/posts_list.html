@@ -55,7 +55,7 @@
                 <h6 class="card-title">📈 Más Vistos</h6>
                 <div class="list-group list-group-sm">
                     {% for post in popular_posts %}
-                        <a href="{% url 'blog:posts_detail' post.slug %}" class="list-group-item list-group-item-action"></a>
+                        <a href="{% url 'blog:posts_detail' post.slug %}" class="list-group-item list-group-item-action">
                             <small>{{ post.title|truncatewords:5 }}</small>
                             <br>
                             <small class="text-muted">👁️ {{ post.count_views }}</small>

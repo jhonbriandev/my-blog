@@ -222,25 +222,25 @@ def public_profile_view(request, user_id):
 
     # Buscar el usuario por ID
     # Si no existe → página 404 automáticamente
-    profile_user = get_object_or_404(User, id=user_id)
+    public_profile = get_object_or_404(User, id=user_id)
 
     # Sus 5 posts publicados más recientes
     user_posts = Post.objects.published().filter(
-        author=profile_user
+        author=public_profile
     ).order_by('-published_at')[:5]
 
     # Total de posts publicados (para el contador)
     posts_count = Post.objects.published().filter(
-        author=profile_user
+        author=public_profile
     ).count()
 
     # Total de comentarios aprobados (para el contador)
-    commentaries_count = profile_user.commentaries.filter(
+    commentaries_count = public_profile.commentaries.filter(
         aprobated=True
     ).count()
 
     context = {
-        'profile_user': profile_user,   # El dueño del perfil
+        'public_profile': public_profile,   # El dueño del perfil
         'user_posts': user_posts,        # Sus últimos posts
         'posts_count': posts_count,      # Contador de posts
         'commentaries_count': commentaries_count,  # Contador de comentarios

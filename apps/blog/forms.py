@@ -167,4 +167,27 @@ class CommentaryForm(forms.ModelForm):
             raise forms.ValidationError(
                 'El comentario no puede exceder los 1000 caracteres')
         return content
+
+
+
+class ApproveCommentaryForm(forms.Form):
+    """
+    Formulario para que el moderador decida qué hacer con un comentario.
     
+    Igual que ApprovePostForm pero para comentarios.
+    Solo tiene dos opciones: aprobar o eliminar.
+    No tiene 'rechazar con motivo' porque los comentarios son cortos —
+    no tiene sentido pedir al usuario que lo reescriba, es mejor
+    aprobarlo o borrarlo directamente.
+    """
+
+    DECISIONS_COMMENTARIES = [
+        ('approve', 'Aprobar — publicar este comentario'),
+        ('delete',  'Eliminar — borrar este comentario'),
+    ]
+
+    decision = forms.ChoiceField(
+        choices=DECISIONS_COMMENTARIES,
+        widget=forms.RadioSelect,  # Botones de radio, más claro que un dropdown
+        label='Decisión'
+    )
