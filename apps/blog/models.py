@@ -17,7 +17,7 @@ class Category(models.Model):
     class Meta:
         verbose_name = 'Categoria'
         verbose_name_plural = 'Categorias'
-        ordering = ['order', 'name'] # Estos datos qeu ingrean a la tabla tendran la prioridad
+        ordering = ['order', 'name'] # Estos datos que ingrean a la tabla tendran la prioridad
                                      # De ser ordenados primero por orden y luego nombre
         indexes = [models.Index(fields=['slug'])]
 
@@ -32,6 +32,10 @@ class Category(models.Model):
     def get_posts_published(self):
         # Accede a los posts via related_name='posts' definido en Post.category
         return self.posts.filter(status='published').count()
+        
+        # Retorna el total de post por categoria, publicados, borradores y archivados
+    def get_posts_total(self):
+        return self.posts.count()
 
 
 class PostQuerySet(models.QuerySet):
@@ -118,6 +122,7 @@ class Post(models.Model):
     # STATUS
     status = models.CharField(max_length=200, choices=STATUS_CHOICES, default='drafts')
     commentaries_permission = models.BooleanField(default=True)
+    
 
     # STATISTICS
     count_views = models.PositiveIntegerField(default=0)
@@ -205,6 +210,24 @@ class Post(models.Model):
 
     def is_draft(self):
         return self.status == 'drafts'
+    
+    def is_archived(self):
+        return self.status == 'archived'
+    
+    # Un admin archiva o desarchiva todo
+    # Un mod archiva o desarchiva todo menos los post del admin
+    # Un usuario solo archiva o desarchvia sus posts
+    # Los visitantes no tienen permiso para esta accion
+
+    def can_be_archived_by(self,user):
+        if not user or not user.is_authenticated:
+            return False
+        profile = user.profile
+        is_author = user == self.author
+        is_admin = profile.is_admin
+        # Moderador puede excepto borrar posts del Admin
+        is_mod_allowed = profile.can_moderate and not self.author.profile.is_admin
+        return is_author or is_admin or is_mod_allowed
 
 
 class Commentary(models.Model):

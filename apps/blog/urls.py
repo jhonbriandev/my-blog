@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import PostListView, PostCreateView,PostDeleteView,PostDetailView,PostUpdateView,IndexView,MyCommentariesView,MyPostsView, ApprovePostView,PostsPendingView,AddCommentaryView,DeleteCommentaryView,ApproveCommentaryView,CommentariesPendingView,EditCommentaryView
+from .views import PostListView, PostCreateView,PostDeleteView,PostDetailView,PostUpdateView,IndexView,MyCommentariesView,MyPostsView, ApprovePostView,PostsPendingView,AddCommentaryView,DeleteCommentaryView
+from .views import ApproveCommentaryView,CommentariesPendingView,EditCommentaryView,ToggleArchivePostView
 
 app_name = 'blog'
 
@@ -36,15 +37,19 @@ urlpatterns = [
 
     path('pending-c/',CommentariesPendingView.as_view(),name='commentaries_pending'),
     path('pending-c/<int:commentary_id>/approve/',ApproveCommentaryView.as_view(), name='approve_commentary'),
+
     # POSTS
     
     path('posts/', PostListView.as_view(), name='posts_list'),
     path('posts/create/', PostCreateView.as_view(), name='posts_create'),
-    path('<slug:slug>/', PostDetailView.as_view(), name='posts_detail'),
+    
     path('<slug:slug>/update/', PostUpdateView.as_view(), name='posts_update'),
     path('<slug:slug>/delete/', PostDeleteView.as_view(), name='posts_delete'),
+    path('<slug:slug>/archive/', ToggleArchivePostView.as_view(), name='posts_toggle_archive'),
 
+    # SIEMPRE AL FINAL
 
+    path('<slug:slug>/', PostDetailView.as_view(), name='posts_detail'),
 
    
 ]

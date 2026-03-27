@@ -90,6 +90,22 @@
                     <a href="{% url 'blog:posts_delete' post.slug %}" class="btn btn-danger btn-sm">
                         🗑️ Eliminar
                     </a>
+                    {# ── Botón archivar / desarchivar ── #}
+                    {# Solo aparece si el usuario tiene permiso real sobre este post #}
+                    {% if user == post.author or user.profile.is_admin or user.profile.can_moderate and not post.author.profile.is_admin %}
+                        <form method="post" action="{% url 'blog:posts_toggle_archive' post.slug %}" class="d-inline">
+                            {% csrf_token %}
+                            {% if post.status == 'archived' %}
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    📂 Desarchivar
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-secondary btn-sm">
+                                    📦 Archivar
+                                </button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
                 </div>
             {% endif %}
 

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar Post — {{ post.title }}{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <h2>¿Eliminar este post?</h2>
+    
+    <!-- Muestra info del post que se va a borrar -->
+    <p>Estás a punto de eliminar: <strong>{{ post.title}}</strong></p>
+    <p>Esta acción no se puede deshacer.</p>
+
+    <!--
+        PARTE CLAVE: el form que envía el POST a Django.
+        
+        - method="post" → le dice a Django "el usuario confirmó"
+        - action="" → vacío significa "enviar a la misma URL actual"
+        - Sin campos, solo el botón y el token csrf
+    -->
+    <div class="d-flex align-items-center gap-3 mb-1 pb-3">
+        {# cabecera con avatar del usuario #}
+        <img
+            src="{{ request.user.profile.get_avatar_url }}"
+            alt="{{ request.user.username }}"
+            class="rounded-circle"
+            style="width: 36px; height: 36px; object-fit: cover;"
+        >
+        <div class="mb-2">
+            <p class="mb-0 fw-medium mb-2"> Post del Autor : {{ post.author }}</p>                    
+        </div>
+    </div>
+        <!-- Este botón dispara el método delete() de tu vista -->
+    <div class="d-flex justify-content-start gap-3 pt-1">
+        <a href="{% url 'blog:posts_detail' post.slug %}" class="btn btn-outline-secondary btn-sm">
+            Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary btn-sm">
+            Eliminar
+        </button>
+    </div>
+</div>
+
+{% endblock %}

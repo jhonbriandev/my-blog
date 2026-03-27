@@ -507,9 +507,51 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
         # Si ES moderador/admin: ver todos (sin filtro adicional
         return queryset
     
-    def form_valid(self, form):
+    def delete(self, request, *args, **kwargs):
         messages.success(self.request, '✓ Post eliminado')
-        return super().form_valid(form)
+        return super().delete(request, *args, **kwargs)
+
+class ToggleArchivePostView(LoginRequiredMixin, View):
+    """
+    Archiva o desarchiva un post con un solo clic.
+    POST /blog/<slug>/archive/
+
+    Ahora delegamos la lógica de permisos al modelo (can_be_archived_by),
+    manteniendo la vista limpia y sin repetir reglas de negocio.
+    """
+    login_url = 'users:login'
+
+    def post(self, request, slug):
+        # ── Bloque 1: Obtener el post ─────────────────────────────
+        # get_object_or_404 devuelve el post o una página 404 automática
+        post = get_object_or_404(Post, slug=slug)
+
+        # ── Bloque 2: Verificar permiso usando el modelo ──────────
+        # Ya no repetimos la lógica aquí, le preguntamos al post mismo
+        if not post.can_be_archived_by(request.user):
+            raise PermissionDenied('No tienes permiso para archivar este post')
+
+        # ── Bloque 3: El interruptor ──────────────────────────────
+        # archived → published  /  cualquier otro estado → archived
+        if post.status == 'archived':
+            post.status = 'published'
+            msg = f'✅ "{post.title}" restaurado y publicado'
+        else:
+            post.status = 'archived'
+            msg = f'📦 "{post.title}" archivado'
+
+        # ── Bloque 4: Guardar solo el campo que cambió ────────────
+        # update_fields evita tocar campos como updated_at innecesariamente
+        post.save(update_fields=['status'])
+        messages.success(request, msg)
+
+        # ── Bloque 5: Redirigir según origen ─────────────────────
+        # Si viene de my-posts, regresa ahí. Si no, al detalle del post.
+        # request.META.get('HTTP_REFERER') = la URL desde donde vino el clic
+        next_url = request.POST.get('next', '')
+        if 'my-posts' in next_url:
+            return redirect('blog:my_posts')
+        return redirect('blog:posts_detail', slug=post.slug)
 
 
 # VISTAS PRIVADAS PARA CADA USUARIO
@@ -539,19 +581,35 @@ class MyPostsView(LoginRequiredMixin, ListView):
         # super() trae el contexto base (la lista de posts, paginación, etc)
         # Luego le agregamos contadores extra para mostrar en el template
         context = super().get_context_data(**kwargs)
+        user = self.request.user
 
         # Contar por separado publicados y borradores
         # Útil para mostrar "3 publicados / 1 borrador" en el template
         context['published_count'] = Post.objects.filter(
-            author=self.request.user,
+            author=user,
             status='published'
         ).count()
 
         context['drafts_count'] = Post.objects.filter(
-            author=self.request.user,
+            author=user,
             status='drafts'
         ).count()
 
+        context['archived_count'] = Post.objects.filter(
+            author=user,
+            status='archived'
+        ).count()
+
+        # ── IDs archivables ────────────────────────────────────────
+        # Como los templates no pueden llamar métodos con argumentos,
+        # calculamos aquí qué posts puede archivar este usuario
+        # y pasamos solo los IDs al template.
+
+        context['archivable_ids'] = {
+            post.pk
+            for post in context['posts']          # solo los de esta página
+            if post.can_be_archived_by(user)
+        }
         return context
 
 
@@ -781,6 +839,8 @@ class CommentaryPermissionMixin:
             raise PermissionDenied
 
         return commentary
+    
+# VISTA PARA AGREGAR COMENTARIOS
 
 class AddCommentaryView(LoginRequiredMixin,View):
     """
@@ -953,7 +1013,7 @@ class ApproveCommentaryView(LoginRequiredMixin,View):
             'form': form,
         })
 
-    
+# VISTA PARA APROBACION DE COMENTARIOS
 
 class CommentariesPendingView(LoginRequiredMixin, View):
     """
@@ -983,6 +1043,8 @@ class CommentariesPendingView(LoginRequiredMixin, View):
             'pending_commentaries': pending,
             'total_pending': pending.count(),
         })
+    
+# VISTA PARA EDICION Y ELIMINACION DE COMENTARIO
     
 class EditCommentaryView(LoginRequiredMixin,CommentaryPermissionMixin,View):
     

@@ -15,7 +15,7 @@
 <!-- BLOQUE: Mini estadísticas -->
 <!-- Muestra cuántos están publicados y cuántos son borradores -->
 <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card text-center">
             <div class="card-body">
                 <h5 class="text-primary">{{ published_count }}</h5>
@@ -23,11 +23,19 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card text-center">
             <div class="card-body">
                 <h5 class="text-warning">{{ drafts_count }}</h5>
                 <small class="text-muted">Borradores</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="text-secondary">{{ archived_count }}</h5>
+                <small class="text-muted">Archivados</small>
             </div>
         </div>
     </div>
@@ -69,11 +77,44 @@
                 </small>
 
                 <!-- Botones de acción -->
-                <div class="mt-2">
-                    <a href="{% url 'blog:posts_update' post.slug %}"
-                       class="btn btn-sm btn-outline-primary">Editar</a>
-                    <a href="{% url 'blog:posts_delete' post.slug %}"
-                       class="btn btn-sm btn-outline-danger">Eliminar</a>
+                <!-- ── Acciones ── -->
+                <div class="d-flex gap-2">
+
+                    {# Ver: solo si está publicado o es el autor (puede ver su borrador) #}
+                    <a href="{% url 'blog:posts_detail' post.slug %}" class="btn btn-outline-primary btn-sm">
+                        👁️ Ver
+                    </a>
+
+                    {# Editar: siempre disponible para el autor #}
+                    <a href="{% url 'blog:posts_update' post.slug %}" class="btn btn-warning btn-sm">
+                        ✏️ Editar
+                    </a>
+
+                    <!--{# Archivar/Desarchivar: preguntamos al modelo si puede #}
+                    {#% if post.can_be_archived_by(user) %}  {# ← NO funciona en templates #}
+                    {#% endif %}
+                    {# Django templates NO permiten llamar métodos con argumentos.  #}
+                    {# La solución está abajo en get_context_data de la vista.      #} -->
+                    {% if post.pk in archivable_ids %}
+                        <form method="post"
+                            action="{% url 'blog:posts_toggle_archive' post.slug %}"
+                            class="d-inline">
+                            {% csrf_token %}
+                            {# next le dice a la vista que regrese a my-posts #}
+                            <input type="hidden" name="next" value="/blog/my-posts/">
+                            {% if post.status == 'archived' %}
+                                <button type="submit" class="btn btn-success btn-sm">📂 Desarchivar</button>
+                            {% else %}
+                                <button type="submit" class="btn btn-dark btn-sm">📦 Archivar</button>
+                            {% endif %}
+                        </form>
+                    {% endif %}
+
+                    {# Eliminar #}
+                    <a href="{% url 'blog:posts_delete' post.slug %}" class="btn btn-danger btn-sm">
+                        🗑️ Eliminar
+                    </a>
+
                 </div>
 
             </div>
