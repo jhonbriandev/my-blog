@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from apps.users.models import ProfileUser
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
+import re
 
 class RegisterForm(UserCreationForm):
     """
@@ -106,6 +107,35 @@ class RegisterForm(UserCreationForm):
             raise ValidationError(f'Username "{username}" no permitido')
         
         return username
+
+    def clean_password1(self):
+
+        # Obtenemos el valor que escribió el usuario
+        password = self.cleaned_data.get('password1')
+
+        # ── REGLA 1: al menos una mayúscula ──
+        # re.search busca si existe AL MENOS UN carácter
+        # que cumpla el patrón. [A-Z] significa "cualquier mayúscula"
+        if not re.search(r'[A-Z]', password):
+            raise forms.ValidationError(
+                'La contraseña debe contener al menos una mayúscula.'
+            )
+
+        # ── REGLA 2: al menos un símbolo ──
+        # Este patrón busca cualquiera de estos símbolos específicos
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+            raise forms.ValidationError(
+                'La contraseña debe contener al menos un símbolo (!@#$%...).'
+            )
+
+        # ── REGLA 3: mínimo 8 caracteres ──
+        if len(password) < 8:
+            raise forms.ValidationError(
+                'La contraseña debe tener al menos 8 caracteres.'
+            )
+
+        # Si pasa todas las reglas, devolvemos la contraseña limpia
+        return password
     
     def save(self, commit=True):
         """

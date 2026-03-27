@@ -1,17 +1,76 @@
+
+
 {% extends "base.html" %}
 
+{% block title %}Editar comentario — {{ post.title }}{% endblock %}
+
 {% block content %}
-<div class="container">
-  <h2>¿Eliminar este comentario?</h2>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
 
-  <!-- Mostramos el comentario para que el usuario confirme qué va a borrar -->
-  <blockquote>{{ commentary.content }}</blockquote>
-  <p>Autor: {{ commentary.get_name_author }}</p>
+        {# breadcrumb — muestra dónde estás #}
+        <nav class="text-muted small mb-3">
+            <a href="{% url 'blog:posts_detail' post.slug %}" class="text-decoration-none">
+                {{ post.title }}
+            </a>
+            <span class="mx-1">›</span>
+            <span>Eliminar comentario</span>
+        </nav>
 
-  <form method="post">
-    {% csrf_token %}
-    <button type="submit">Sí, eliminar</button>
-    <a href="{% url 'blog:posts_detail' commentary.post.slug %}">Cancelar</a>
-  </form>
+        <div class="card">
+            <div class="card-body p-4">
+
+                {# cabecera con avatar del usuario #}
+                <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                    <img
+                        src="{{ request.user.profile.get_avatar_url }}"
+                        alt="{{ request.user.username }}"
+                        class="rounded-circle"
+                        style="width: 36px; height: 36px; object-fit: cover;"
+                    >
+                    <div class="mb-2">
+                        <p class="mb-0 fw-short mb-2"> Comentario : {{ commentary.content}}</p>
+                        <p class="mb-0 fw-medium mb-2"> Autor : {{ commentary.get_name_author }}</p>                    
+                        <p class="mb-0 small text-muted mb-2">
+                            En:
+                            <a href="{% url 'blog:posts_detail' post.slug %}" class="text-decoration-none">
+                                {{ post.title }}
+                            </a>
+                        </p>
+                    </div>
+                </div>
+
+                {# formulario #}
+                <form method="post">
+                    {% csrf_token %}
+
+                    {# renderizamos cada campo manualmente para controlarlo visualmente #}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label small fw-medium text-muted">
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    {# botones alineados a la derecha #}
+                    <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                        <a href="{% url 'blog:posts_detail' post.slug %}" class="btn btn-outline-secondary btn-sm">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            Eliminar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

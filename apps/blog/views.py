@@ -211,6 +211,7 @@ class PostDetailView(DetailView):
     - Solo posts publicados (o si eres autor/admin)
     - Incrementar contador de vistas
     - Mostrar comentarios aprobados
+    - Mostrar respuestas a comentarios aprobados
     - Mostrar formulario de comentario
     - Mostrar posts relacionados
     """
@@ -229,7 +230,7 @@ class PostDetailView(DetailView):
             # Select_Related es un optimizador para llaves foraneas u One to one
             # Sirve para evirar escribir muchos queries y problema N + 1
             # Hara un JOIN en SQL y traera todo junto
-            # Gracia a esto traemos el autor del post Y su perfil en la misma query
+            # Gracias a esto traemos el autor del post Y su perfil en la misma query
             # Y ademas cada post tiene una categoria entonces el la misma query trae esta informacion
             'author__profile',
                 # usamos __ para navegar entre relaciones (author → profile)
@@ -973,7 +974,9 @@ class CommentariesPendingView(LoginRequiredMixin, View):
         ).select_related(
             'author',       # evita N+1 queries al mostrar el nombre del autor
             'post',         # evita N+1 queries al mostrar el título del post
-            'author__profile'
+            'author__profile',
+            'response_to',           # Traer el comentario padre si existe
+            'response_to__author',   # y su autor, para mostrarlo en tabla
         ).order_by('created_at')
 
         return render(request, 'blog/dashboard/commentaries_pending.html', {

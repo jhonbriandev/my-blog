@@ -49,6 +49,7 @@
                     <thead class="table-dark">
                         <tr>
                             <th>Autor</th>
+                            <th>Tipo</th>
                             <th>Comentario</th>
                             <th>Post</th>
                             <th>Fecha</th>
@@ -76,6 +77,19 @@
                                         <small class="text-muted">@{{ commentary.author.username }}</small>
                                     </div>
                                 </div>
+                            </td>
+                            <td>
+                                {% if commentary.response_to %}
+                                    {# Es una RESPUESTA → mostrar a quién responde #}
+                                    <span class="badge bg-secondary">↩ Respuesta</span>
+                                    <br>
+                                    <small class="text-muted">
+                                        a {{ commentary.response_to.author.get_full_name|default:commentary.response_to.author.username }}
+                                    </small>
+                                {% else %}
+                                    {# Es un comentario raíz normal #}
+                                    <span class="badge bg-primary">💬 Comentario</span>
+                                {% endif %}
                             </td>
 
                             {# Contenido del comentario #}
@@ -120,7 +134,7 @@
                                         ⧗ Revisar
                                     </a>
 
-                                    {# Aprobar directamente desde la tabla #}
+                                    <!--{# Aprobar directamente desde la tabla #}
                                     <form method="post"
                                           action="{% url 'blog:approve_commentary' commentary.pk %}"
                                           style="display:inline;">
@@ -131,6 +145,7 @@
                                             ✓ Aprobar
                                         </button>
                                     </form>
+                                    -->
 
                                     {# Eliminar directamente #}
                                     <a href="{% url 'blog:delete_commentary' commentary.post.slug commentary.pk %}"
