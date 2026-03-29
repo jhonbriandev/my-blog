@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from apps.users.models import ProfileUser
 
 @pytest.mark.django_db
-class TesttProfileUser:
+class TestProfileUser:
     def test_create_profile_with_user(self):
         """Test creación automática de perfil"""
         user = User.objects.create_user(
@@ -33,7 +33,7 @@ class TesttProfileUser:
         user.profile.rol = 'admin'
         user.profile.save()
         # Aqui se guarda el admin
-        assert user.profile.is_admin()
+        assert user.profile.is_admin
         # Indicara True si se inserto de manera correcta el rol admin, o pasara el test
     def test_is_admin_if_superuser(self):
         # No solo un admin creado por el django.admin es un administrador 
@@ -46,7 +46,7 @@ class TesttProfileUser:
             email='admin@example.com',
             password='admin123'
         )
-        assert user.profile.is_admin()
+        assert user.profile.is_admin
         # Esto es un metodo creado en models
     def test_get_fullname(self):
         """Test obtener nombre completo"""
@@ -54,7 +54,7 @@ class TesttProfileUser:
             username= 'jhondev',
             first_name = 'Jhon',
             last_name = 'AC',
-            password= 'pass'
+            password= 'testpass123'
         )
         assert user.profile.get_fullname() == 'Jhon AC'
         # assert user.profile.get_fullname() == 'Nombre diferente', si ejecutamos esto, verifcamos que el
