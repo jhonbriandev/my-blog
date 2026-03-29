@@ -247,8 +247,8 @@ class PostDetailView(DetailView):
         """
         obj = super().get_object(queryset)
         
-        # Si es borrador, solo autor y admin lo ven
-        if obj.status == 'drafts':
+        # Borradores Y archivados: solo autor y admin/mod los ven
+        if obj.status in ('drafts', 'archived'):
             if not self.request.user.is_authenticated:
                 raise Http404('Post no encontrado')
             # is admin sin parentesis gracias al @property
@@ -336,6 +336,11 @@ class PostDetailView(DetailView):
             id=post.id
         )[:3]
 
+        context['can_archive'] = (
+        post.can_be_archived_by(self.request.user)
+        if self.request.user.is_authenticated
+        else False
+        )
         return context
 
 
@@ -398,17 +403,23 @@ class PostCreateView(LoginRequiredMixin, CreateView):
             # Admin: publicar automáticamente
             post.status = 'published'
             post.published_at = timezone.now()
+            # Le decimos exactamente qué pasó: publicado directamente
+            success_message = f'✅ Post "{post.title}" publicado correctamente.'
         else:
             # Usuario regular: solo borrador
             post.status = 'drafts'
             # fecha_publicacion se establece cuando admin publique
-        
+            # Le avisamos que está en revisión, no "creado exitosamente" a secas
+            success_message = (
+                f'📝 Post "{post.title}" guardado como borrador. '
+                f'Un administrador lo revisará pronto.'
+            )
         # GUARDAR EN BD
         post.save()
-        # └─ Ahora tiene ID, puede tener comentarios, etc
+        #  Ahora tiene ID, puede tener comentarios, etc
         
         # MENSAJE DE ÉXITO
-        messages.success(self.request, '✓ Post creado exitosamente')
+        messages.success(self.request,success_message)
         
         # REDIRIGIR AL POST CREADO
         return redirect('blog:posts_detail', slug=post.slug)
@@ -535,14 +546,23 @@ class ToggleArchivePostView(LoginRequiredMixin, View):
         # archived → published  /  cualquier otro estado → archived
         if post.status == 'archived':
             post.status = 'published'
+            post.archived_by_role = ''          # borramos el sello
             msg = f'✅ "{post.title}" restaurado y publicado'
         else:
             post.status = 'archived'
+
+            profile = request.user.profile
+            if profile.is_admin:
+                post.archived_by_role = 'admin'
+            elif profile.can_moderate:
+                post.archived_by_role = 'mod'
+            else:
+                post.archived_by_role = 'user'
             msg = f'📦 "{post.title}" archivado'
 
         # ── Bloque 4: Guardar solo el campo que cambió ────────────
         # update_fields evita tocar campos como updated_at innecesariamente
-        post.save(update_fields=['status'])
+        post.save(update_fields=['status','archived_by_role'])
         messages.success(request, msg)
 
         # ── Bloque 5: Redirigir según origen ─────────────────────
@@ -568,13 +588,14 @@ class MyPostsView(LoginRequiredMixin, ListView):
     login_url = 'users:login'               # si no está logueado, va aquí
 
     def get_queryset(self):
-        # request.user = el usuario que está navegando ahora mismo
-        # .posts = accedemos via related_name='posts' en el modelo Post
-        # .all() = todos sus posts (borradores Y publicados)
-        # .order_by('-created_at') = más recientes primero
-        # Es como filtrar un cajón de cartas y sacar solo las tuyas
+        # Agregamos select_related('author__profile') para que can_be_archived_by
+        # pueda leer profile.is_admin sin hacer queries extra por cada post.
+        # Analogía: en vez de ir al archivo por cada documento uno a uno,
+        # traes toda la carpeta de una sola vez.
         return Post.objects.filter(
             author=self.request.user
+        ).select_related(
+            'author__profile'   # Se añade el select related para evitar tantos queries
         ).order_by('-created_at')
 
     def get_context_data(self, **kwargs):
@@ -699,6 +720,82 @@ class PostsPendingView(LoginRequiredMixin, ListView):
             ).count(),
         }
         
+        return context
+
+class CommentariesPendingView(LoginRequiredMixin, View):
+    """
+    Dashboard para ver y aprobar todos los comentarios pendientes.
+    Solo accesible para admin o moderadores.
+    """
+    login_url = 'users:login'
+
+    def get(self, request):
+
+        if not request.user.profile.can_moderate:
+            raise PermissionDenied
+
+        # Traemos comentarios pendientes, del más antiguo al más nuevo
+        # (el más antiguo lleva más tiempo esperando — fair queue)
+        pending = Commentary.objects.filter(
+            aprobated=False
+        ).select_related(
+            'author',       # evita N+1 queries al mostrar el nombre del autor
+            'post',         # evita N+1 queries al mostrar el título del post
+            'author__profile',
+            'response_to',           # Traer el comentario padre si existe
+            'response_to__author',   # y su autor, para mostrarlo en tabla
+        ).order_by('created_at')
+
+        return render(request, 'blog/dashboard/commentaries_pending.html', {
+            'pending_commentaries': pending,
+            'total_pending': pending.count(),
+        })
+
+class ArchivedPostsView(LoginRequiredMixin, ListView):
+    """
+    Dashboard de posts archivados.
+    GET /blog/dashboard/archived/
+    
+    Permite a admin y moderadores ver todos los posts archivados
+    y restaurarlos desde un solo lugar, sin perderles el rastro.
+    
+    Analogía: como el archivo físico de una oficina —
+    los documentos no se tiraron, solo se guardaron,
+    y cualquier supervisor puede ir a buscarlos.
+    """
+    model = Post
+    template_name = 'blog/dashboard/posts_archived.html'
+    context_object_name = 'posts'
+    paginate_by = 20
+    login_url = 'users:login'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Solo admin y moderadores pueden ver este dashboard
+        if not request.user.profile.can_moderate:
+            raise PermissionDenied('Solo admin o moderador puede ver posts archivados')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return Post.objects.filter(
+            status='archived'
+        ).select_related(
+            'author__profile',  # para can_be_archived_by y mostrar autor
+            'category'
+        ).order_by('-updated_at')  # los más recientemente archivados primero
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Pre-calculamos permisos para el template
+        # (mismo patrón que MyPostsView — templates no admiten métodos con args)
+        user = self.request.user
+        context['archivable_ids'] = {
+            post.pk
+            for post in context['posts']
+            if post.can_be_archived_by(user)
+        }
+
+        context['total_archived'] = Post.objects.filter(status='archived').count()
         return context
     
 class ApprovePostView(LoginRequiredMixin, View):
@@ -851,7 +948,7 @@ class AddCommentaryView(LoginRequiredMixin,View):
     Características:
     - Solo usuarios autenticados
     - Validar que el post permita comentarios
-    - Si es admin, auto-aprobar
+    - Si es admin o moderador auto-aprobar
     - Si es usuario, requiere aprobación
     """
     login_url = 'users:login'
@@ -874,9 +971,9 @@ class AddCommentaryView(LoginRequiredMixin,View):
             commentary.post = post
             commentary.author = request.user
 
-            # Auto aprobar si es admin
+            # Auto aprobar si es admin o moderador
             # is admin sin parentesis gracias al @property
-            commentary.aprobated = request.user.profile.is_admin
+            commentary.aprobated = request.user.profile.can_moderate
             
             # Detectar si es una respuesta ──────────────────
             # El template enviará un campo oculto 'response_to' con el
@@ -1013,36 +1110,6 @@ class ApproveCommentaryView(LoginRequiredMixin,View):
             'form': form,
         })
 
-# VISTA PARA APROBACION DE COMENTARIOS
-
-class CommentariesPendingView(LoginRequiredMixin, View):
-    """
-    Dashboard para ver y aprobar todos los comentarios pendientes.
-    Solo accesible para admin o moderadores.
-    """
-    login_url = 'users:login'
-
-    def get(self, request):
-
-        if not request.user.profile.can_moderate:
-            raise PermissionDenied
-
-        # Traemos comentarios pendientes, del más antiguo al más nuevo
-        # (el más antiguo lleva más tiempo esperando — fair queue)
-        pending = Commentary.objects.filter(
-            aprobated=False
-        ).select_related(
-            'author',       # evita N+1 queries al mostrar el nombre del autor
-            'post',         # evita N+1 queries al mostrar el título del post
-            'author__profile',
-            'response_to',           # Traer el comentario padre si existe
-            'response_to__author',   # y su autor, para mostrarlo en tabla
-        ).order_by('created_at')
-
-        return render(request, 'blog/dashboard/commentaries_pending.html', {
-            'pending_commentaries': pending,
-            'total_pending': pending.count(),
-        })
     
 # VISTA PARA EDICION Y ELIMINACION DE COMENTARIO
     

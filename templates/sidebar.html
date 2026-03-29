@@ -1,0 +1,131 @@
+{% load static %}
+<aside class="sidebar">
+
+    <!-- ── BLOQUE 1: Perfil del usuario logueado ── -->
+    {% if user.is_authenticated %}
+    <div class="sidebar-card sidebar-profile">
+        <div class="sidebar-avatar">
+            {% if user.profile.profile_picture %}
+                <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}">
+            {% else %}
+                <div class="sidebar-avatar-placeholder">
+                    {{ user.username|first|upper }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="sidebar-profile-info">
+            <strong>{{ user.profile.get_fullname }}</strong>
+            <span class="sidebar-rol sidebar-rol--{{ user.profile.rol }}">
+                {{ user.profile.get_rol_display }}
+            </span>
+        </div>
+        <div class="sidebar-profile-links">
+            <a href="{% url 'users:profile' %}">Ver perfil</a>
+            <span class="sidebar-sep">·</span>
+            <a href="{% url 'blog:my_posts' %}">Mis posts</a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── BLOQUE 2: Estadísticas ── -->
+    {% if total_posts or total_users %}
+    <div class="sidebar-card">
+        <h6 class="sidebar-title">📊 Comunidad</h6>
+        <div class="sidebar-stats">
+            <div class="sidebar-stat">
+                <span class="sidebar-stat-num">{{ total_posts|default:"0" }}</span>
+                <span class="sidebar-stat-label">Posts publicados</span>
+            </div>
+            <div class="sidebar-stat-divider"></div>
+            <div class="sidebar-stat">
+                <span class="sidebar-stat-num">{{ total_users|default:"0" }}</span>
+                <span class="sidebar-stat-label">Miembros</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── BLOQUE 3: Categorías ── -->
+    {% if categories %}
+    <div class="sidebar-card">
+        <h6 class="sidebar-title">🗂️ Categorías</h6>
+        <ul class="sidebar-categories">
+            {% for category in categories %}
+            <li>
+                <a href="{% url 'blog:posts_list' %}?category={{ category.slug }}"
+                   class="sidebar-category-link {% if select_categories == category.slug %}active{% endif %}">
+                    {% if category.icon %}
+                        <span class="sidebar-cat-icon">{{ category.icon }}</span>
+                    {% endif %}
+                    <span class="sidebar-cat-name">{{ category.name }}</span>
+                    <span class="sidebar-cat-count">{{ category.get_posts_published }}</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ── BLOQUE 4: Posts más populares ── -->
+    {% if popular_posts %}
+    <div class="sidebar-card">
+        <h6 class="sidebar-title">🔥 Lo más visto</h6>
+        <ul class="sidebar-popular">
+            {% for post in popular_posts %}
+            <li class="sidebar-popular-item">
+                {% if post.featured_image %}
+                    <img src="{{ post.featured_image.url }}" 
+                         alt="{{ post.title }}" 
+                         class="sidebar-popular-thumb">
+                {% else %}
+                    <div class="sidebar-popular-thumb sidebar-popular-thumb--empty">
+                        📄
+                    </div>
+                {% endif %}
+                <div class="sidebar-popular-info">
+                    <a href="{% url 'blog:posts_detail' slug=post.slug %}" 
+                       class="sidebar-popular-title">
+                        {{ post.title|truncatechars:45 }}
+                    </a>
+                    <span class="sidebar-popular-views">
+                        👁 {{ post.count_views }} vistas
+                    </span>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- ── BLOQUE 5: Acciones rápidas (solo logueados) ── -->
+    {% if user.is_authenticated %}
+    <div class="sidebar-card">
+        <h6 class="sidebar-title">⚡ Acciones rápidas</h6>
+        <div class="sidebar-actions">
+            <a href="{% url 'blog:posts_create' %}" class="sidebar-action-btn sidebar-action-btn--primary">
+                ✍️ Nuevo post
+            </a>
+            <a href="{% url 'blog:my_posts' %}" class="sidebar-action-btn">
+                📁 Mis posts
+            </a>
+            <a href="{% url 'blog:my_commentaries' %}" class="sidebar-action-btn">
+                💬 Mis comentarios
+            </a>
+            {% if user.profile.can_moderate %}
+                <a href="{% url 'blog:commentaries_pending' %}" class="sidebar-action-btn sidebar-action-btn--warning">
+                    ⧗ Comentarios pendientes
+                </a>
+                <a href="{% url 'blog:posts_archived' %}" class="sidebar-action-btn sidebar-action-btn--warning">
+                    📦 Posts archivados
+                </a>
+            {% endif %}
+            {% if user.profile.is_admin %}
+                <a href="{% url 'blog:posts_pending' %}" class="sidebar-action-btn sidebar-action-btn--danger">
+                    🔔 Posts pendientes
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+</aside>

@@ -60,7 +60,7 @@ class ComentaryInline(admin.TabularInline):
         return preview
     content_preview.short_description = 'Contenido'
 
-    # ============ ADMIN POSTS ============
+# ============ ADMIN POSTS ============
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
@@ -154,7 +154,7 @@ class PostAdmin(admin.ModelAdmin):
         aprobated = obj.commentaries.filter(aprobated=True).count()
         pending = obj.commentaries.filter(aprobated=False).count()
         return format_html(
-            '✓ {} | ⧗ {}',
+            '<span>✓ {} | ⧗ {}</span>',
             aprobated, pending
         )
     commentaries_count_display.short_description = 'Comentarios'
@@ -208,4 +208,80 @@ class PostAdmin(admin.ModelAdmin):
     approve_commentaries.short_description = '✓ Aprobar comentarios pendientes'
 
 
+# ============ ADMIN COMENTARIOS ============
+
+@admin.register(Commentary)
+class CommentaryAdmin(admin.ModelAdmin):
+    """Admin para Comentarios"""
+    
+    list_display = [
+        'author',
+        'post_link',
+        'content_preview',
+        'aprobated_badge',
+        'created_at'
+    ]
+    
+    list_filter = ['aprobated', 'created_at']
+    search_fields = ['content', 'author__username', 'post__title']
+    readonly_fields = ['author', 'post', 'created_at', 'updated_at']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Información', {
+            'fields': ('post', 'author', 'content')
+        }),
+        ('Moderación', {
+            'fields': ('aprobated', 'was_edited')
+        }),
+        ('Fechas', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    ordering = ['-created_at']
+    actions = ['approve_commentaries', 'rejected_commentaries']
+    
+    def post_link(self, obj):
+        """Enlace al post"""
+        url = reverse('admin:blog_post_change', args=[obj.post.id])
+        return format_html('<a href="{}">{}</a>', url, obj.post.title)
+    post_link.short_description = 'Post'
+    
+    def content_preview(self, obj):
+        """Preview del contenido"""
+        preview = obj.content[:50]
+        if len(obj.content) > 50:
+            preview += '...'
+        return preview
+    content_preview.short_description = 'Contenido'
+    
+    def aprobated_badge(self, obj):
+        """Badge de aprobación"""
+        if obj.aprobated:
+            return format_html(
+                # Siempre que uses format_html, debe tener {} con su valor
+                '<span style="color: green;"><b>{}</b></span>',
+                '✓ Aprobado' 
+            )
+        else:
+            return format_html(
+                '<span style="color: orange;"><b>{}</b></span>',
+                '⧗ Pendiente'
+            )
+    aprobated_badge.short_description = 'Estado'
+    
+    def approve_commentaries(self, request, queryset):
+        """Acción: Aprobar"""
+        count = queryset.update(aprobated=True)
+        self.message_user(request, f'{count} comentarios aprobados')
+    approve_commentaries.short_description = '✓ Aprobar'
+    
+    def rejected_commentaries(self, request, queryset):
+        """Acción: Rechazar (eliminar)"""
+        count = queryset.count()
+        queryset.delete()
+        self.message_user(request, f'{count} comentarios eliminados')
+    rejected_commentaries.short_description = '✗ Rechazar'
 

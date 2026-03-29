@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from apps.users.models import ProfileUser
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -133,6 +134,12 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)        # se actualiza en cada save
     published_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
+    # NUEVO CAMPO AGREGADO PARA SABER QUE ROL TIENE EL QUE ARCHIVA UN POST
+    # Guarda el ROL de quien archivó, no quién fue.
+    # Analogía: el sello dice "ARCHIVADO POR: MODERADOR", no el nombre de la persona.
+    # Así la jerarquía funciona aunque el usuario cambie de rol después.
+    archived_by_role= models.CharField(max_length=20,blank=True,default='',choices=ProfileUser.ROLE_CHOICES) # 'user', 'mod', 'admin
+
     objects = PostManager()  # reemplaza el manager por defecto de Django
 
     class Meta:
@@ -199,7 +206,7 @@ class Post(models.Model):
         if not user or not user.is_authenticated:
             return False
         # Permite editar al autor del post o a un administrador
-        return user == self.author or user.profile.is_admin()
+        return user == self.author or user.profile.is_admin
 
     def can_be_deleted_by(self, user):
         # Reutiliza la misma lógica de edición para eliminar
@@ -223,11 +230,41 @@ class Post(models.Model):
         if not user or not user.is_authenticated:
             return False
         profile = user.profile
-        is_author = user == self.author
-        is_admin = profile.is_admin
-        # Moderador puede excepto borrar posts del Admin
-        is_mod_allowed = profile.can_moderate and not self.author.profile.is_admin
-        return is_author or is_admin or is_mod_allowed
+
+        # ── Caso 1: archivar (post no está archivado aún) ─────────────
+        if self.status != 'archived':
+            is_author = user == self.author
+            is_admin = profile.is_admin
+            # Moderador puede excepto borrar posts del Admin
+            is_mod_allowed = profile.can_moderate and not self.author.profile.is_admin
+            return is_author or is_admin or is_mod_allowed
+        """
+        Se aprecia el uso del IF y no el ELIF
+        Elif es de gran ayuda para evaluar un caso y si lo cumple sale del condicional
+        En este caso usamos un IF con return, esto hace lo mismo que un ELIF
+        Asi que usar(ELIF) no nos brinda ninguna ventaja y para mejor lectura del
+        codigo, usaremos IF
+        """
+        # ── Caso 2: desarchivar (leemos el rol guardado) ───────────────
+        # Analogía: para borrar un sello de "ARCHIVADO POR: ADMIN"
+        # necesitas ser al menos admin.
+        role = self.archived_by_role  # 'admin', 'mod', 'user' o ''
+
+        if role == 'admin':
+            return profile.is_admin                  # solo admin
+
+        if role == 'mod':
+            return profile.can_moderate            
+            # mod o admin, no el autor
+        if role == 'user':
+            # Solo el autor puede, o un mod/admin
+            return user == self.author or profile.can_moderate
+
+        # Si archived_by_role está vacío (''),
+        # asumimos que fue archivado por moderación (caso conservador).
+        # Es mejor bloquear por error que dejar pasar por error.
+        # Analogía: si no sabes quién puso el candado, no lo abras.
+        return profile.can_moderate
 
 
 class Commentary(models.Model):

@@ -1,8 +1,11 @@
+{% load static %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
         <!-- Logo -->
+
+
         <a class="navbar-brand" href="{% url 'blog:index' %}">
-            📚 Blog Django
+            <img src="{% static 'img/logo-blogdev.png' %}" alt="BlogDev" width="70" height="40">
         </a>
         
         <!-- Botón hamburguesa (móvil) -->
@@ -49,6 +52,11 @@
                                 <li>
                                     <a class="dropdown-item" href="{% url 'blog:commentaries_pending' %}">
                                         ⧗ Comentarios Pendientes
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'blog:posts_archived' %}">
+                                        ⧗ Posts Archivados
                                     </a>
                                 </li>
                                  <!-- Si no es admin, esta pestaña directamente no aparece -->

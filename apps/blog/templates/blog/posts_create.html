@@ -55,20 +55,36 @@
                     </div>
                     
                     <!-- Estado -->
-                    <div class="mb-3">
-                        <label for="{{ form.status.id_for_label }}" class="form-label">Estado</label>
-                        {{ form.status }}
-                        {% if form.status.errors %}
-                            <div class="text-danger small">{{ form.status.errors }}</div>
-                        {% endif %}
-                        <small class="form-text text-muted">
-                            {% if user.profile.is_admin %}
-                                Como admin, tu post se publicará automáticamente
-                            {% else %}
-                                Tu post será guardado como borrador hasta que un admin lo publique
+
+                    {% if user.profile.is_admin %}
+
+                        {# Solo el admin ve y usa este campo #}
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">Estado</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger small">{{ form.status.errors }}</div>
                             {% endif %}
-                        </small>
-                    </div>
+                            <small class="form-text text-muted">
+                                Como admin, puedes publicar directamente.
+                            </small>
+                        </div>
+
+                    {% else %}
+
+                        <div class="mb-3" style="display: none;">
+                            {{ form.status }}
+                        </div>
+
+                        {# En su lugar mostramos un aviso claro e informativo #}
+                        <div class="mb-3">
+                            <div class="alert alert-info py-2 mb-0" role="alert">
+                                📝 Tu post se guardará como <strong>borrador</strong> 
+                                y estará visible una vez que un administrador lo apruebe.
+                            </div>
+                        </div>
+
+                    {% endif %}
                     
                     <!-- Buttons -->
                     <div class="d-grid gap-2 d-sm-flex justify-content-sm-end">

@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import PostListView, PostCreateView,PostDeleteView,PostDetailView,PostUpdateView,IndexView,MyCommentariesView,MyPostsView, ApprovePostView,PostsPendingView,AddCommentaryView,DeleteCommentaryView
-from .views import ApproveCommentaryView,CommentariesPendingView,EditCommentaryView,ToggleArchivePostView
+from .views import ApproveCommentaryView,CommentariesPendingView,EditCommentaryView,ToggleArchivePostView,ArchivedPostsView  
 
 app_name = 'blog'
 
@@ -46,6 +46,10 @@ urlpatterns = [
     path('<slug:slug>/update/', PostUpdateView.as_view(), name='posts_update'),
     path('<slug:slug>/delete/', PostDeleteView.as_view(), name='posts_delete'),
     path('<slug:slug>/archive/', ToggleArchivePostView.as_view(), name='posts_toggle_archive'),
+
+    # POSTS ARCHIVADOS
+
+    path('pending-archived/', ArchivedPostsView.as_view(), name='posts_archived'),
 
     # SIEMPRE AL FINAL
 

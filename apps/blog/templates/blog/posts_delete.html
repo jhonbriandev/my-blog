@@ -6,39 +6,52 @@
 
 <div class="row justify-content-center">
     <h2>¿Eliminar este post?</h2>
-    
-    <!-- Muestra info del post que se va a borrar -->
-    <p>Estás a punto de eliminar: <strong>{{ post.title}}</strong></p>
+
+    <p>Estás a punto de eliminar: <strong>{{ post.title }}</strong></p>
     <p>Esta acción no se puede deshacer.</p>
 
-    <!--
-        PARTE CLAVE: el form que envía el POST a Django.
-        
-        - method="post" → le dice a Django "el usuario confirmó"
-        - action="" → vacío significa "enviar a la misma URL actual"
-        - Sin campos, solo el botón y el token csrf
+    <!--BLOQUE 1: Info del autor
+
+        Muestra el avatar y nombre del autor del post.
+        Esto es solo informativo, no afecta la lógica.
     -->
-    <div class="d-flex align-items-center gap-3 mb-1 pb-3">
-        {# cabecera con avatar del usuario #}
+
+    <div class="d-flex align-items-center gap-3 mb-3">
         <img
             src="{{ request.user.profile.get_avatar_url }}"
             alt="{{ request.user.username }}"
             class="rounded-circle"
             style="width: 36px; height: 36px; object-fit: cover;"
         >
-        <div class="mb-2">
-            <p class="mb-0 fw-medium mb-2"> Post del Autor : {{ post.author }}</p>                    
+        <div>
+            <p class="mb-0 fw-medium">Post del Autor: {{ post.author }}</p>
         </div>
     </div>
-        <!-- Este botón dispara el método delete() de tu vista -->
-    <div class="d-flex justify-content-start gap-3 pt-1">
-        <a href="{% url 'blog:posts_detail' post.slug %}" class="btn btn-outline-secondary btn-sm">
-            Cancelar
-        </a>
-        <button type="submit" class="btn btn-primary btn-sm">
-            Eliminar
-        </button>
-    </div>
+    <!-- INICIO DEL FORMULARIO FUNDAMENTAL PARA ENVIO DE DATOS -->
+    <form method="post" action="">
+
+        {% csrf_token %}
+        <div class="d-flex justify-content-start gap-3 pt-1">
+            <a href="{% url 'blog:posts_detail' post.slug %}"
+               class="btn btn-outline-secondary btn-sm">
+                Cancelar
+            </a>
+
+            <button type="submit"
+                    class="btn btn-danger btn-sm"
+                    onclick="this.disabled=true; this.innerText='Eliminando…'; this.form.submit();">
+                <!--
+                    onclick hace 3 cosas al hacer clic:
+                    1. this.disabled=true       → desactiva el botón (evita doble clic)
+                    2. this.innerText='...'     → cambia el texto como feedback visual
+                    3. this.form.submit()       → envía el formulario manualmente
+                -->
+                Eliminar
+            </button>
+        </div>
+    </form>
+    <!-- Fin del formulario -->
+
 </div>
 
 {% endblock %}
