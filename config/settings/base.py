@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 from decouple import config, Csv
+import dj_database_url
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -87,17 +89,22 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# PARA LOCAL, NO USAR EN DEPLOY
+#DATABASES = {
+    #'default': {
+        #'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
+        #'NAME': config('DB_NAME'),       # busca DB_NAME en el .env
+        #'USER': config('DB_USER'),       # busca DB_USER en el .env
+        #'PASSWORD': config('DB_PASSWORD'), # busca DB_PASSWORD en el .env
+        #'HOST': config('DB_HOST', default='localhost'),
+        #'PORT': config('DB_PORT', default='5432'),
+    #}
+#}
 DATABASES = {
-    'default': {
-        'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
-        'NAME': config('DB_NAME'),       # busca DB_NAME en el .env
-        'USER': config('DB_USER'),       # busca DB_USER en el .env
-        'PASSWORD': config('DB_PASSWORD'), # busca DB_PASSWORD en el .env
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
-    }
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL')
+    )
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
