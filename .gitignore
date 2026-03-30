@@ -36,3 +36,33 @@ htmlcov/
 
 # Pytest
 .pytest_cache/
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Mac
+.DS_Store
+.AppleDouble
+
+# =============================================
+# ARCHIVOS DE EDITORES DE CÓDIGO
+# =============================================
+.vscode/
+.idea/
+*.swp
+# =============================================
+# ARCHIVOS ESTÁTICOS Y MEDIA GENERADOS
+# =============================================
+# Los archivos que los usuarios suben no van en el repo
+/media/
+
+# Los estáticos se generan con collectstatic
+/staticfiles/
+
+# =============================================
+# COBERTURA DE TESTS Y REPORTES
+# =============================================
+.coverage
+htmlcov/
+.pytest_cache/
