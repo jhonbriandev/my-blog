@@ -26,8 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-#DEBUG = True
+
 DEBUG = config('DEBUG', default=False, cast=bool)
+
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
 
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
 
      # Third party
     'rest_framework',
@@ -89,23 +91,27 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# PARA LOCAL, NO USAR EN DEPLOY
-#DATABASES = {
-    #'default': {
-        #'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
-        #'NAME': config('DB_NAME'),       # busca DB_NAME en el .env
-        #'USER': config('DB_USER'),       # busca DB_USER en el .env
-        #'PASSWORD': config('DB_PASSWORD'), # busca DB_PASSWORD en el .env
-        #'HOST': config('DB_HOST', default='localhost'),
-        #'PORT': config('DB_PORT', default='5432'),
-    #}
-#}
-DATABASES = {
-    'default': dj_database_url.config(
-        default=config('DATABASE_URL')
-    )
-}
+# DIFERENCIA ENTRE DB EN PRODUCCION O LOCAL
 
+DATABASE_URL = config('DATABASE_URL', default=None)
+
+if DATABASE_URL:
+    # Render: usa la URL completa de la base de datos
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL)
+    }
+else:
+    # Local: usa las variables separadas del .env
+    DATABASES = {
+        'default': {
+            'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -199,8 +205,14 @@ if not DEBUG:
 
 # SEND EMAIL
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # PARA LOCAL
-#EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# Cambia automáticamente según DEBUG
+if DEBUG:
+    # Local: imprime los emails en la consola, no los envía de verdad
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    # Render: envía emails reales por SMTP
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    
 EMAIL_HOST = 'smtp.gmail.com'   
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
