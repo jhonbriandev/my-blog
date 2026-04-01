@@ -149,7 +149,8 @@ def login_view(request):
 
         # Re-renderizar si form no válido
         return render(request, 'users/login.html',{'form':form})
-
+    
+@login_required(login_url='users:login')
 def logout_view(request):
     """
     Vista de logout.
