@@ -5,10 +5,12 @@ y otros realizados por los LLM, que se utilizaron para explicar, detallar y brin
 agreado a los aprendizajes.
 
 El presente proyecto busca implementar el aprendizaje obtenido acerca del framework Django, 
-utilizando los principales fundamentos de Python, SQL, ademas se incorporo sintaxis de HTML, CSS Y Javascript
+utilizando los principales fundamentos de Python, SQL, ademas se incorporo sintaxis de HTML, CSS Y Javascript.
 
 Este proyecto muestra un blog interactivo, accesible desde la web, no es necesario logearse para visualizar el conteido
 sin embargo si deseas participar podrias registrarte, y en breve tus publicaciones y comentarios seran aprobados.
+
+Puedes visitar el sitio aqui: https://my-blog-z6ya.onrender.com/
 
 # Blog Django — Proyecto Portfolio
 
