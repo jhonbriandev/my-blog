@@ -80,4 +80,15 @@ Blog completo desarrollado con Django 4.2+ como proyecto de portfolio.
 ## Screenshots del Blog
 
 Vista principal del Blog
+
 ![alt text](image.png)
+
+Vista de dashboard del administrador
+
+![alt text](image-1.png)
+
+Vista detallada de las publicaciones, con opciones de edicion y eliminacion
+ademas permite comentarios y respuestas a comentarios.
+
+![alt text](image-2.png)
+
