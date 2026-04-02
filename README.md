@@ -1,4 +1,15 @@
 Sitio web generado con python y django denominado My Blog
+Este es un proyecto dirigido por mi persona con ayuda de Inteligencia Artificial
+Es un proyecto de aprendizaje, existen muchos comentarios incluidos, hechos por mi autoria
+y otros realizados por los LLM, que se utilizaron para explicar, detallar y brindar valor 
+agreado a los aprendizajes.
+
+El presente proyecto busca implementar el aprendizaje obtenido acerca del framework Django, 
+utilizando los principales fundamentos de Python, SQL, ademas se incorporo sintaxis de HTML, CSS Y Javascript
+
+Este proyecto muestra un blog interactivo, accesible desde la web, no es necesario logearse para visualizar el conteido
+sin embargo si deseas participar podrias registrarte, y en breve tus publicaciones y comentarios seran aprobados.
+
 # Blog Django — Proyecto Portfolio
 
 Blog completo desarrollado con Django 4.2+ como proyecto de portfolio.
@@ -66,7 +77,7 @@ Blog completo desarrollado con Django 4.2+ como proyecto de portfolio.
    python manage.py runserver
 ```
 
-## Ejecutar tests
-```bash
-pytest
-```
+## Screenshots del Blog
+
+Vista principal del Blog
+![alt text](image.png)
