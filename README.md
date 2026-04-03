@@ -12,7 +12,7 @@ sin embargo si deseas participar podrias registrarte, y en breve tus publicacion
 
 Puedes visitar el sitio aqui: https://my-blog-z6ya.onrender.com/
 
-# Blog Django — Proyecto Portfolio
+# Blog Django — Proyecto Portafolio
 
 Blog completo desarrollado con Django 4.2+ como proyecto de portfolio.
 
