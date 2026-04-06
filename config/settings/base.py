@@ -45,6 +45,7 @@ INSTALLED_APPS = [
 
      # Third party
     'rest_framework',
+    'drf_spectacular',
     'corsheaders',
     'django_filters',
     'crispy_forms',
@@ -174,6 +175,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # CORS
