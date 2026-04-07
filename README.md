@@ -7,7 +7,7 @@ agreado a los aprendizajes.
 El presente proyecto busca implementar el aprendizaje obtenido acerca del framework Django, 
 utilizando los principales fundamentos de Python, SQL, ademas se incorporo sintaxis de HTML, CSS Y Javascript.
 
-Este proyecto muestra un blog interactivo, accesible desde la web, no es necesario logearse para visualizar el conteido
+Este proyecto muestra un blog interactivo, accesible desde la web, no es necesario logearse para visualizar el contenido.
 sin embargo si deseas participar podrias registrarte, y en breve tus publicaciones y comentarios seran aprobados.
 
 Puedes visitar el sitio aqui: https://my-blog-z6ya.onrender.com/
