@@ -1,0 +1,127 @@
+{
+    "count" :8,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": 10,
+            "title": "Normas Comunitarias",
+            "category_name": {
+                "id": 3,
+                "name": "Sociedad",
+                "slug": "sociedad"
+            },
+            "slug": "normas-comunitarias",
+            "author_name": "jhonbriandev",
+            "summary": "normas comunitarias",
+            "count_views": 100,
+            "published_at": "2026-03-23T06:16:39.375404Z",
+            "total_main_commentaries": 5
+        },
+        {
+            "id": 9,
+            "title": "Recorriendo el Peru",
+            "category_name": {
+                "id": 2,
+                "name": "Ocio",
+                "slug": "ocio"
+            },
+            "slug": "recorriendo-el-peru-1",
+            "author_name": "Urpi Callejos",
+            "summary": "De viaje por la sierra peruana",
+            "count_views": 223,
+            "published_at": "2026-03-24T04:43:46.281953Z",
+            "total_main_commentaries": 3
+        },
+        {
+            "id": 6,
+            "title": "El nevado de Huaytapallana",
+            "category_name": {
+                "id": 2,
+                "name": "Ocio",
+                "slug": "ocio"
+            },
+            "slug": "el-nevado-de-huaytapallana",
+            "author_name": "Urpi Callejos",
+            "summary": "Nevados y lagos de Huancayo",
+            "count_views": 110,
+            "published_at": "2026-03-23T04:31:18.773544Z",
+            "total_main_commentaries": 0
+        },
+        {
+            "id": 5,
+            "title": "Recorriendo el Peru",
+            "category_name": {
+                "id": 2,
+                "name": "Ocio",
+                "slug": "ocio"
+            },
+            "slug": "recorriendo-el-peru",
+            "author_name": "Jacinto Palestina",
+            "summary": "Viaje al Peru",
+            "count_views": 35,
+            "published_at": "2026-03-23T04:18:07.793291Z",
+            "total_main_commentaries": 1
+        },
+        {
+            "id": 4,
+            "title": "Post de prueba para Django",
+            "category_name": {
+                "id": 2,
+                "name": "Ocio",
+                "slug": "ocio"
+            },
+            "slug": "post-de-prueba-para-django",
+            "author_name": "jhonbriandev",
+            "summary": "Un gran post para Django",
+            "count_views": 31,
+            "published_at": "2026-03-22T03:46:17.485215Z",
+            "total_main_commentaries": 1
+        },
+        {
+            "id": 3,
+            "title": "La familia y su importancia en",
+            "category_name": {
+                "id": 3,
+                "name": "Sociedad",
+                "slug": "sociedad"
+            },
+            "slug": "familia",
+            "author_name": "Jacinto Palestina",
+            "summary": "familia feliz, sociedad en paz",
+            "count_views": 50,
+            "published_at": "2026-03-22T02:29:13Z",
+            "total_main_commentaries": 2
+        },
+        {
+            "id": 2,
+            "title": "Primer Post del primer usuario",
+            "category_name": {
+                "id": 1,
+                "name": "Publicidad",
+                "slug": "publicidad-blog"
+            },
+            "slug": "primer-post-userfav",
+            "author_name": "Jacinto Palestina",
+            "summary": "Primer Post",
+            "count_views": 29,
+            "published_at": "2026-03-21T16:59:09.953663Z",
+            "total_main_commentaries": 1
+        },
+        {
+            "id": 1,
+            "title": "Primer Post para el Blog",
+            "category_name": {
+                "id": 3,
+                "name": "Sociedad",
+                "slug": "sociedad"
+            },
+            "slug": "primer-post-general",
+            "author_name": "jhonbriandev",
+            "summary": "Primer Post",
+            "count_views": 18,
+            "published_at": "2026-03-22T02:29:05Z",
+            "total_main_commentaries": 0
+        }
+    ]
+}

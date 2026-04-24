@@ -1,0 +1,27 @@
+{
+    "count": 4,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": 4,
+            "name": "Deportes",
+            "slug": "deportes"
+        },
+        {
+            "id": 2,
+            "name": "Ocio",
+            "slug": "ocio"
+        },
+        {
+            "id": 1,
+            "name": "Publicidad",
+            "slug": "publicidad-blog"
+        },
+        {
+            "id": 3,
+            "name": "Sociedad",
+            "slug": "sociedad"
+        }
+    ]
+}
