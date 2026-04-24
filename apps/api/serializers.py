@@ -42,19 +42,26 @@ class PostSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source = 'author.profile.get_fullname', read_only = True)
     # Para anidado dentro del Json con mas atributos
     #author_name = AuthorSerializer(source='author',read_only=True)
-    categoria_name = CategorySerializer(source='category',read_only=True)
+    # Para anidado
+    category_name = CategorySerializer(source='category',read_only=True)
     # Campo calculado: no existe en el modelo, lo generamos aquí.
     # Cuenta los comentarios aprobados del post.
-    total_commentaries = serializers.SerializerMethodField()
+    """
+    Este campo tiene un similar en la BD pero la diferencia es :
+    Este campo solo cuenta comentarios raices
+    El otro campo de conteo cuenta todos, incluyendo respuestas
+    Es entonces a eleccion de cada uno cual usar
+    """
+    total_main_commentaries = serializers.SerializerMethodField()
     # usas este campo especial. DRF busca automáticamente un método llamado get_<nombre_del_campo> en el serializer.
 
     class Meta:
         model = Post
-        fields = ['id','title','categoria_name','slug',
+        fields = ['id','title','category_name','slug',
                   'author_name', 'summary','count_views',
-                  'published_at','total_commentaries']
+                  'published_at','total_main_commentaries']
     # get_<nombre_del_campo>     
-    def get_total_commentaries(self,obj):
+    def get_total_main_commentaries(self,obj):
         """
         Método especial que DRF llama automáticamente para
         calcular el campo 'total_commentaries'.

@@ -54,7 +54,7 @@ class PostViewSet(viewsets.ReadOnlyModelViewSet):
         post = self.get_object()
 
         # Filtramos solo comentarios aprobados y de nivel raíz
-        # (sin respuestas, igual que en tu sistema actual)
+        # (sin respuestas, igual que en nuestro sistema actual)
         commentaries = Commentary.objects.filter(
             post=post,
             aprobated=True,

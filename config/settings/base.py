@@ -45,11 +45,12 @@ INSTALLED_APPS = [
 
      # Third party
     'rest_framework',
-    'drf_spectacular',
     'corsheaders',
     'django_filters',
     'crispy_forms',
     'crispy_bootstrap5',
+    #Para Swagger
+    'drf_spectacular',
     
     # Local apps
     'apps.users.apps.UsersConfig',

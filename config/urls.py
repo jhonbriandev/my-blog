@@ -16,15 +16,24 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path , include
+from apps.api.urls import router
 from django.conf import settings
 from django.conf.urls.static import static
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Creacion de api root, lista de APIs, visible en la raiz /api
+    # Usamos el router creado en api/urls para obtener las rutas incluidas en ese objeto
+    path('api/',include(router.urls)),
     path('',include('apps.blog.urls')),
     path('users/',include('apps.users.urls')),
     path('api/',include('apps.api.urls')),
+    # Para Swagger
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
