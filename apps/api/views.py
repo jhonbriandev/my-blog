@@ -111,15 +111,9 @@ class CommentaryViewSet(ModelViewSet):
       - retrieve() → GET /api/commmentaries/<pk>/
     """
 
+    # Traemos para la Lista y Detalle, comentarios y respuestas
     def get_queryset(self):
-        # Si es una petición de detalle (retrieve), busca en todos, comentarios y respuestas
-        if self.action == 'retrieve':
-            return Commentary.objects.filter(aprobated=True)
-        # Si es listado, solo raíces, no respuestas
-        return Commentary.objects.filter(
-            aprobated=True,
-            response_to=None
-        ).order_by('created_at')
+        return Commentary.objects.filter(aprobated=True).order_by('created_at')
 
     serializer_class = CommentarySerializer
     permission_classes = [IsAuthenticatedOrReadOnly | IsAdminUser]
