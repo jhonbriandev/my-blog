@@ -1,29 +1,52 @@
 from django.shortcuts import render
-from rest_framework import permissions
 from apps.blog.models import Post, Commentary, Category
 from apps.api.serializers import PostSerializer, CategorySerializer, CommentarySerializer
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework.viewsets import ModelViewSet
+from rest_framework import permissions
+from rest_framework.permissions import IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+# Permiso Personalizado para Post
+class IsAuthorOrReadOnly(permissions.BasePermission):
 
-class PostViewSet(viewsets.ReadOnlyModelViewSet):
+    def has_permission(self, request, view):
+        # Lectura para cualquiera, escritura solo autenticados
+        # Esto permite que usuarios no autenticados puedan hacer GET (list/retrieve)
+        if request.method in permissions.SAFE_METHODS:
+            # En SAFE_METHODS estan incluidos GET, HEAD, OPTIONS (Metodos Lectura) 
+            return True
+        # Para POST, PUT, PATCH, DELETE requiere autenticación
+        return request.user and request.user.is_authenticated
+    
+    def has_object_permission(self, request, view, obj):
+        # Permite leer cualquier objeto
+        if request.method in permissions.SAFE_METHODS:
+            return True 
+        # Solo el autor puede modificar su propia tarea
+        return obj.author == request.user
+    
+class PostViewSet(ModelViewSet):
     """
     ViewSet para API de posts
-    Es de solo lectura, la escritura se realiza en el blog
-    ReadOnlyModelViewSet genera automáticamente DOS acciones:
-      - list()     → GET /api/posts/           (lista todos)
-      - retrieve() → GET /api/posts/<slug>/    (detalle de uno)
+    Anteriormente fue de solo lectura por ReadOnlyModelViewSet
+    Ahora se usa ModelViewSet para utilizar POST, PUT, PACH, DELETE
+
     """
     queryset = Post.objects.filter(
         status='published'
     ).order_by('-created_at')
     serializer_class = PostSerializer
-    permission_classes =[permissions.AllowAny]
+
+    # Uso de OR (|):
+    # - IsAuthorOrReadOnly permite lectura pública y escritura al autor
+    # - IsAdminUser permite control total al administrador
+    # Resultado:
+    # Autor O Admin pueden modificar
+    permission_classes =[IsAuthorOrReadOnly | IsAdminUser]
     # Permite buscar con ?search=django en la URL
     filter_backends =[DjangoFilterBackend,SearchFilter]
     search_fields = ['title','content']
@@ -70,19 +93,15 @@ class PostViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(serializer.data)
 
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet de solo lectura para Categorías.
+class CategoryViewSet(ModelViewSet):
 
-    Genera automáticamente:
-      - list()     → GET /api/categories/
-      - retrieve() → GET /api/categories/<pk>/
-    """
     queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
+    # Así la URL queda: /api/categories/mi-category/ en vez de /api/categories/1/
+    lookup_field = 'slug'
 
-class CommentaryViewSet(viewsets.ReadOnlyModelViewSet):
+class CommentaryViewSet(ModelViewSet):
     """
     ViewSet de solo lectura para Comentarios aprobados.
 

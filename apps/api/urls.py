@@ -9,6 +9,12 @@ router = DefaultRouter()
 # Registramos el ViewSet de posts
 # r'posts' → será la URL /api/posts/
 # basename='post' → prefijo para los nombres de las URLs generadas
+""" 
+Se usa el basename task o user
+Pero el sistema genera automaticamente 
+    basename='posts'  --->   posts-list, posts-detail
+    basename='categories'  --->   categories-list, categories-detail
+"""
 router.register(r'posts', views.PostViewSet, basename='post')
 router.register(r'categories', views.CategoryViewSet, basename='category')
 router.register(r'commentaries', views.CommentaryViewSet, basename='commentary')
