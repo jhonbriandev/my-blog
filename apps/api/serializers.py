@@ -84,15 +84,20 @@ class CommentarySerializer(serializers.ModelSerializer):
     response_to = serializers.SerializerMethodField()
     # Esto agregara un enlace para dirigirnos al post a donde pertenece el comentario
     post_url = serializers.HyperlinkedRelatedField(
-    source='post',
-    view_name='api:post-detail',
-    lookup_field='slug',
-    read_only=True
-)
+        source='post',
+        view_name='api:post-detail',
+        lookup_field='slug',
+        read_only=True
+    )
+    content_url = serializers.HyperlinkedIdentityField(
+        view_name='api:commentary-detail',
+        lookup_field='pk',
+    )
+
     class Meta:
         model = Commentary
-        fields = ['id','content','author_name',
-                  'post','post_url','aprobated','created_at','response_to']
+        fields = ['id','content','content_url','post_url','author_name',
+                  'post','aprobated','created_at','response_to']
 
     # Mostrar respuestas del comentario    
     def get_response_to(self, obj):

@@ -20,17 +20,29 @@ from apps.api.urls import router
 from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,   # Vista para hacer LOGIN y obtener el token
+    TokenRefreshView,      # Vista para RENOVAR el token cuando expira
+)
 
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
     # Creacion de api root, lista de APIs, visible en la raiz /api
     # Usamos el router creado en api/urls para obtener las rutas incluidas en ese objeto
-    path('api/',include(router.urls)),
+    # Agregamos el namespace 'api' aquí
+    path('api/', include((router.urls, 'api'))),
+    # api auth se encargara de la validacion de login, sin eso no podremos usar token ni POST, PATCH, DELETE
+    path('api-auth/', include('rest_framework.urls')),
+    # Ruta de login → aquí envías usuario y contraseña, recibes el token
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # Ruta de renovación → aquí envías el refresh token y recibes uno nuevo
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
     path('',include('apps.blog.urls')),
     path('users/',include('apps.users.urls')),
-    path('api/',include('apps.api.urls')),
     # Para Swagger
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),

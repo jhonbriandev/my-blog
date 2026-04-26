@@ -12,8 +12,8 @@ router = DefaultRouter()
 """ 
 Se usa el basename task o user
 Pero el sistema genera automaticamente 
-    basename='posts'  --->   posts-list, posts-detail
-    basename='categories'  --->   categories-list, categories-detail
+    basename='post'  --->   post-list, post-detail
+    basename='category'  --->   category-list, category-detail
 """
 router.register(r'posts', views.PostViewSet, basename='post')
 router.register(r'categories', views.CategoryViewSet, basename='category')

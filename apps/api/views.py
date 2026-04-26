@@ -1,9 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from apps.blog.models import Post, Commentary, Category
 from apps.api.serializers import PostSerializer, CategorySerializer, CommentarySerializer
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import permissions
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
@@ -97,24 +97,30 @@ class CategoryViewSet(ModelViewSet):
 
     queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
-    permission_classes = [permissions.AllowAny]
+    # FALTA CREAR UN PERMISO ESPECIAL PARA LECTURA GLOBAL PERO SOLO MOD DE ADMINS
+    permission_classes = [IsAdminUser | IsAuthenticatedOrReadOnly]
     # Así la URL queda: /api/categories/mi-category/ en vez de /api/categories/1/
     lookup_field = 'slug'
 
 class CommentaryViewSet(ModelViewSet):
     """
-    ViewSet de solo lectura para Comentarios aprobados.
+    ViewSet para Comentarios aprobados.
 
     Genera automáticamente:
       - list()     → GET /api/commmentaries/
       - retrieve() → GET /api/commmentaries/<pk>/
     """
 
-    # Solo comentarios aprobados, igual que en tu lógica actual
-    queryset = Commentary.objects.filter(
-        aprobated=True,
-        response_to=None   # Solo comentarios raíz, no respuestas
-    ).order_by('created_at')
+    def get_queryset(self):
+        # Si es una petición de detalle (retrieve), busca en todos, comentarios y respuestas
+        if self.action == 'retrieve':
+            return Commentary.objects.filter(aprobated=True)
+        # Si es listado, solo raíces, no respuestas
+        return Commentary.objects.filter(
+            aprobated=True,
+            response_to=None
+        ).order_by('created_at')
 
     serializer_class = CommentarySerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAuthenticatedOrReadOnly | IsAdminUser]
+    lookup_field = 'pk' 
