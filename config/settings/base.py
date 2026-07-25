@@ -45,12 +45,13 @@ INSTALLED_APPS = [
 
      # Third party
     'rest_framework',
-    'corsheaders',
     'django_filters',
     'crispy_forms',
     'crispy_bootstrap5',
     #Para Swagger
     'drf_spectacular',
+    # Para evitar conflicto de puertos
+    "corsheaders",
     
     # Local apps
     'apps.users.apps.UsersConfig',
@@ -171,7 +172,13 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        # Autenticación basada en sesión (cookies)
+        # Se usa cuando el cliente ya tiene una sesión iniciada (ej: login en /api-auth/)
         'rest_framework.authentication.SessionAuthentication',
+
+        # Autenticación basada en token JWT
+        # Se usa cuando la request incluye un header Authorization: Bearer <token>
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
@@ -185,6 +192,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost:8000',
 ]
+# Para ver mas puertos y usar JS
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Crispy Forms
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"

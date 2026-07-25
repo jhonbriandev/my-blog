@@ -11,6 +11,33 @@ from django.contrib.auth.models import User
     PUT
     DELETE
 """
+# SERIALIZER PARA REGISTRO
+
+class RegisterSerializer(serializers.ModelSerializer):
+    # Campo extra que no está en el modelo pero necesitamos para validar
+    password2 = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email','first_name', 'last_name','password', 'password2']
+        extra_kwargs = {
+            'password': {'write_only': True},  # nunca devuelve la contraseña
+            'first_name': {'required': False},
+            'last_name': {'required': False},
+         }
+
+    # Validación: las dos contraseñas deben coincidir
+    def validate(self, data):
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError("Las contraseñas no coinciden")
+        return data
+
+    # Crea el usuario correctamente (con contraseña encriptada)
+    def create(self, validated_data):
+        validated_data.pop('password2')  # quitamos el campo extra antes de crear
+        user = User.objects.create_user(**validated_data)
+        return user
+    
 # SERIALIZER PARA CATEGORIA
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -42,8 +69,13 @@ class PostSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source = 'author.profile.get_fullname', read_only = True)
     # Para anidado dentro del Json con mas atributos
     #author_name = AuthorSerializer(source='author',read_only=True)
-    # Para anidado
+    # Para anidado, PARA LECTURA
     category_name = CategorySerializer(source='category',read_only=True)
+    # Para ESCRIBIR — solo recibe el ID al crear/editar
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        write_only=True  # no se muestra en GET
+    )
     # Campo calculado: no existe en el modelo, lo generamos aquí.
     # Cuenta los comentarios aprobados del post.
     """
@@ -57,9 +89,18 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id','title','category_name','slug',
-                  'author_name', 'summary','count_views',
-                  'published_at','total_main_commentaries']
+        fields = ['id','title','category_name','category','slug',
+                  'author_name','content', 'summary','count_views',
+                  'created_at','published_at','total_main_commentaries']
+        extra_kwargs = {
+            'slug':       {'read_only': True},
+            'count_views':{'read_only': True},
+            'created_at': {'read_only': True},
+            'published_at':{'read_only': True},
+            'title':      {'required': False},  # Para usar PATCH en los clientes, para que no sea obligatorio al editar
+            'content':    {'required': False},  # 
+            'summary':    {'required': False},  # 
+        }
     # get_<nombre_del_campo>     
     def get_total_main_commentaries(self,obj):
         """

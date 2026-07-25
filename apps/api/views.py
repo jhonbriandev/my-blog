@@ -1,9 +1,10 @@
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.models import User
 from apps.blog.models import Post, Commentary, Category
-from apps.api.serializers import PostSerializer, CategorySerializer, CommentarySerializer
+from apps.api.serializers import PostSerializer, CategorySerializer, CommentarySerializer, RegisterSerializer
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import permissions
-from rest_framework.permissions import IsAdminUser, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAdminUser, IsAuthenticatedOrReadOnly, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import PageNumberPagination
@@ -28,6 +29,28 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
             return True 
         # Solo el autor puede modificar su propia tarea
         return obj.author == request.user
+
+class IsOwner(permissions.BasePermission):
+    """Solo el mismo autor puede ver sus posts"""
+    
+    def has_permission(self, request, view):
+        # Primero verifica que esté logueado
+        return request.user.is_authenticated
+    
+    def has_object_permission(self, request, view, obj):
+        # Luego verifica que el post le pertenezca
+        return obj.author == request.user
+    
+class RegisterViewSet(ModelViewSet):
+
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+
+    # AllowAny = cualquiera puede registrarse, sin estar logueado
+    permission_classes = [AllowAny]
+    # Solo permitimos "create", bloqueamos todo lo demás
+    #http_method_names = ['post']
+
     
 class PostViewSet(ModelViewSet):
     """
@@ -56,6 +79,11 @@ class PostViewSet(ModelViewSet):
     filterset_fields = ['category','author']
     pagination_class = PageNumberPagination
 
+
+    # Asigna automáticamente el usuario autenticado como autor
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+        
     # ACCION PERSONALIZADA
 
     @action(
@@ -92,6 +120,28 @@ class PostViewSet(ModelViewSet):
         )
 
         return Response(serializer.data)
+        
+    
+class MyPostViewSet(ModelViewSet):
+
+    serializer_class = PostSerializer
+    permission_classes = [IsOwner]
+    lookup_field = 'slug'
+    http_method_names = [
+    'get',
+    'post',
+    'put',
+    'patch',
+    'delete'
+]
+    def perform_create(self, serializer):
+        # self.request.user es el usuario autenticado, extraído automáticamente
+        # del token que mandaste en el header Authorization.
+        serializer.save(author=self.request.user)
+    
+    def get_queryset(self):
+        return Post.objects.filter(author = self.request.user
+                                    ).order_by('-created_at')
 
 class CategoryViewSet(ModelViewSet):
 
