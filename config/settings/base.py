@@ -41,11 +41,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
 
-    # FIX: cloudinary_storage debe ir ANTES que staticfiles para poder interceptar
-    # cómo se guardan los archivos subidos por los usuarios.
-    'cloudinary_storage',
+    # FIX: staticfiles ahora va ANTES que cloudinary_storage.
+    # Así, Cloudinary solo maneja los archivos "media" (subidos por usuarios),
+    # y deja que Django/WhiteNoise maneje el collectstatic normal para CSS/JS/imágenes propias.
     'django.contrib.staticfiles',
+    'cloudinary_storage',
     'cloudinary',
+    
     'rest_framework',
     'django_filters',
     'crispy_forms',
@@ -164,12 +166,7 @@ STORAGES = {
         ),
     },
 }
-
-# --- Línea "puente" que arregla el error ---
-# El paquete django-cloudinary-storage todavía busca esta variable antigua
-# aunque Django 6 ya no la use por dentro. La definimos a mano para que no truene.
-STATICFILES_STORAGE = "cloudinary_storage.storage.StaticCloudinaryStorage"
-
+ 
 # Credenciales de Cloudinary — se leen de variables de entorno, nunca escritas en el código.
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
