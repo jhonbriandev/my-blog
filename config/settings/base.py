@@ -239,14 +239,23 @@ if not DEBUG:
     # FIX: el nombre correcto en Django 6.0 es SECURE_CSP (no SECURE_CONTENT_SECURITY_POLICY).
     # Sin el nombre correcto Y el middleware de arriba, esto no hacía nada antes.
     SECURE_CSP = {
-        "default-src": [CSP.SELF],
-        "script-src": [CSP.SELF, CSP.UNSAFE_INLINE],
-        "style-src": [
+    "default-src": [CSP.SELF],
+
+    # FIX: se agrega el dominio del CDN para permitir que se cargue
+    # bootstrap.bundle.min.js (antes solo estaba permitido el CSS, no el JS).
+    "script-src": [CSP.SELF, CSP.UNSAFE_INLINE, "https://cdn.jsdelivr.net"],
+
+    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE, "https://cdn.jsdelivr.net"],
+
+    # FIX: se agrega una lista específica para imágenes ("img-src").
+    # Sin esta línea, las imágenes usan la lista "default-src" (solo tu dominio),
+    # y como tus imágenes de media viven en Cloudinary, el navegador las bloqueaba.
+    "img-src": [
         CSP.SELF,
-        CSP.UNSAFE_INLINE,
-        "https://cdn.jsdelivr.net",
+        "https://res.cloudinary.com",  # dominio donde Cloudinary sirve tus imágenes
+        "data:",  # FIX: permite imágenes "inline" en base64 (comunes en algunos íconos o placeholders)
     ],
-    }
+}
     # Nota: quité SECURE_BROWSER_XSS_FILTER porque Django ya lo eliminó
     # (los navegadores modernos ignoran esa cabecera hace años).
 
