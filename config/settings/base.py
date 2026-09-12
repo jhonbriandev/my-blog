@@ -165,6 +165,11 @@ STORAGES = {
     },
 }
 
+# --- Línea "puente" que arregla el error ---
+# El paquete django-cloudinary-storage todavía busca esta variable antigua
+# aunque Django 6 ya no la use por dentro. La definimos a mano para que no truene.
+STATICFILES_STORAGE = "cloudinary_storage.storage.StaticCloudinaryStorage"
+
 # Credenciales de Cloudinary — se leen de variables de entorno, nunca escritas en el código.
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
