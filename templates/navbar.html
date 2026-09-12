@@ -1,126 +1,144 @@
 {% load static %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container">
-        <!-- Logo -->
+  <div class="container">
+    <!-- Logo -->
 
+    <a class="navbar-brand" href="{% url 'blog:index' %}">
+      <img
+        src="{% static 'img/logo-blogdev.png' %}"
+        alt="BlogDev"
+        width="90"
+        height="40"
+      />
+    </a>
 
-        <a class="navbar-brand" href="{% url 'blog:index' %}">
-            <img src="{% static 'img/logo-blogdev.png' %}" alt="BlogDev" width="70" height="40">
-        </a>
-        
-        <!-- Botón hamburguesa (móvil) -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        
-        <!-- Menu items -->
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
+    <!-- Botón hamburguesa (móvil) -->
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-                <!-- Inicio -->
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'blog:index' %}">Inicio</a>
-                </li>
-                
-                <!-- Posts -->
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'blog:posts_list' %}">Posts</a>
-                </li>
-                
-                <!-- Si está logueado -->
-                {% if user.is_authenticated %}
+    <!-- Menu items -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <!-- Inicio -->
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'blog:index' %}">Inicio</a>
+        </li>
 
-                    <!-- Crear post -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'blog:posts_create' %}">
-                            ✍️ Crear Post
-                        </a>
-                    </li>
+        <!-- Posts -->
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'blog:posts_list' %}">Posts</a>
+        </li>
 
-                    <!-- Pestaña Dashboard solo visible para admin o moderador -->
-                    {% if user.profile.can_moderate %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" 
-                               id="dashboardMenu" role="button" 
-                               data-bs-toggle="dropdown">
-                                🛠️ Dashboard
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="dashboardMenu">
-                                <!-- Posts pendientes de aprobación -->
-                        
-                                <!-- user.profile.can_moderate para admin o mod -->
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'blog:commentaries_pending' %}">
-                                        ⧗ Comentarios Pendientes
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'blog:posts_archived' %}">
-                                        ⧗ Posts Archivados
-                                    </a>
-                                </li>
-                                 <!-- Si no es admin, esta pestaña directamente no aparece -->
-                                {% if user.profile.is_admin %}
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'blog:posts_pending' %}">
-                                        ⧗ Posts Pendientes
-                                    </a>
-                                </li>
-                                {% endif %}
-                            </ul>
-                        </li>
-                    {% endif %}
-                    <!-- Dropdown usuario -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" 
-                           id="userMenu" role="button" 
-                           data-bs-toggle="dropdown">
-                            {{ user.username }}
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="userMenu">
-                            <li>
-                                <a class="dropdown-item" href="{% url 'users:profile' %}">
-                                    👤 Perfil
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'users:edit_profile' %}">
-                                    ⚙️ Editar Perfil
-                                </a>
-                            </li>
-                            <!-- ❌ user.perfil.is_admin → ✅ user.profile.is_admin -->
-                            {% if user.profile.is_admin %}
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="/admin/">
-                                        🔐 Panel Admin Django
-                                    </a>
-                                </li>
-                            {% endif %}
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'users:logout' %}">
-                                    🚪 Cerrar Sesión
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                
-                <!-- Si NO está logueado -->
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'users:login' %}">
-                            Iniciar Sesión
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'users:register' %}">
-                            Registrarse
-                        </a>
-                    </li>
-                {% endif %}
+        <!-- Si está logueado -->
+        {% if user.is_authenticated %}
 
-            </ul>
-        </div>
+        <!-- Crear post -->
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'blog:posts_create' %}">
+            ✍️ Crear Post
+          </a>
+        </li>
+
+        <!-- Pestaña Dashboard solo visible para admin o moderador -->
+        {% if user.profile.can_moderate %}
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="dashboardMenu"
+            role="button"
+            data-bs-toggle="dropdown"
+          >
+            🛠️ Dashboard
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="dashboardMenu">
+            <!-- Posts pendientes de aprobación -->
+
+            <!-- user.profile.can_moderate para admin o mod -->
+            <li>
+              <a
+                class="dropdown-item"
+                href="{% url 'blog:commentaries_pending' %}"
+              >
+                ⧗ Comentarios Pendientes
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'blog:posts_archived' %}">
+                ⧗ Posts Archivados
+              </a>
+            </li>
+            <!-- Si no es admin, esta pestaña directamente no aparece -->
+            {% if user.profile.is_admin %}
+            <li>
+              <a class="dropdown-item" href="{% url 'blog:posts_pending' %}">
+                ⧗ Posts Pendientes
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </li>
+        {% endif %}
+        <!-- Dropdown usuario -->
+        <li class="nav-item dropdown">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            id="userMenu"
+            role="button"
+            data-bs-toggle="dropdown"
+          >
+            {{ user.username }}
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="userMenu">
+            <li>
+              <a class="dropdown-item" href="{% url 'users:profile' %}">
+                👤 Perfil
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="{% url 'users:edit_profile' %}">
+                ⚙️ Editar Perfil
+              </a>
+            </li>
+            <!-- ❌ user.perfil.is_admin → ✅ user.profile.is_admin -->
+            {% if user.profile.is_admin %}
+            <li><hr class="dropdown-divider" /></li>
+            <li>
+              <a class="dropdown-item" href="/admin/">
+                🔐 Panel Admin Django
+              </a>
+            </li>
+            {% endif %}
+            <li><hr class="dropdown-divider" /></li>
+            <li>
+              <a class="dropdown-item" href="{% url 'users:logout' %}">
+                🚪 Cerrar Sesión
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- Si NO está logueado -->
+        {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'users:login' %}">
+            Iniciar Sesión
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'users:register' %}">
+            Registrarse
+          </a>
+        </li>
+        {% endif %}
+      </ul>
     </div>
+  </div>
 </nav>
