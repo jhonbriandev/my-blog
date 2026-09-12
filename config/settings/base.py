@@ -241,7 +241,11 @@ if not DEBUG:
     SECURE_CSP = {
         "default-src": [CSP.SELF],
         "script-src": [CSP.SELF, CSP.UNSAFE_INLINE],
-        "style-src": [CSP.SELF, CSP.UNSAFE_INLINE],
+        "style-src": [
+        CSP.SELF,
+        CSP.UNSAFE_INLINE,
+        "https://cdn.jsdelivr.net",
+    ],
     }
     # Nota: quité SECURE_BROWSER_XSS_FILTER porque Django ya lo eliminó
     # (los navegadores modernos ignoran esa cabecera hace años).
